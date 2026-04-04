@@ -2,16 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import { RECENT_CONSULTATIONS, REPORT_STATUS } from "../../constants"; 
-
-const userData = {
-  name: "Sarah Jenkins",
-  stats: {
-    totalConsultations: "12",
-    reportsFiled: "04",
-    totalDonations: "$2,450"
-  }
-};
+import { useSearchParams } from "next/navigation"; // Import ini untuk baca URL
+import { RECENT_CONSULTATIONS, REPORT_STATUS, DONATION_HISTORY } from "../../constants"; 
 
 // --- ICONS (Tetap sama) ---
 const ConsultationIcon = () => (
@@ -33,53 +25,98 @@ const DonationsIcon = () => (
 );
 
 export default function DashboardPage() {
+  // 1. AMBIL QUERY DARI URL
+  const searchParams = useSearchParams();
+  const searchBarQuery = searchParams.get("search")?.toLowerCase() || "";
+
+  // 2. LOGIKA FILTER DATA
+  // Filter Konsultasi berdasarkan nama Dokter
+  const filteredConsultations = RECENT_CONSULTATIONS.filter((item) =>
+    item.dr.toLowerCase().includes(searchBarQuery)
+  );
+
+  // Filter Laporan berdasarkan ID atau Tipe
+  const filteredReports = REPORT_STATUS.filter((item) =>
+    item.id.toLowerCase().includes(searchBarQuery) || 
+    item.type.toLowerCase().includes(searchBarQuery)
+  );
+
+  // 3. HITUNG TOTAL DONASI (Tetap pakai semua data asli)
+  const totalDonationAmount = DONATION_HISTORY.reduce((acc, curr) => {
+    const cleanAmount = parseFloat(curr.amount.replace(/[Rp.+$ ,]/g, ""));
+    return acc + (isNaN(cleanAmount) ? 0 : cleanAmount);
+  }, 0);
+
+  const formatRupiah = (value: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
+
   return (
     <div className="p-12 space-y-10 animate-fade-in">
       
-      {/* 2. NAMA DINAMIS */}
+      {/* WELCOME SECTION */}
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-[36px] font-black text-[#193C1F] tracking-tight leading-tight">
-            Welcome back, {userData.name.split(' ')[0]} {/* Ambil nama depan saja */}
+            Welcome back, Sarah
           </h2>
-          <p className="text-[#8EA087] text-[16px] font-medium mt-1">Everything looks good.</p>
+          <p className="text-[#8EA087] text-[16px] font-medium mt-1">
+            {searchBarQuery 
+              ? `Showing results for "${searchBarQuery}"` 
+              : `Everything looks good. You have ${REPORT_STATUS.filter(r => r.status === 'PENDING REVIEW').length} pending reports this week.`}
+          </p>
         </div>
         <div className="flex gap-4">
-          <button className="px-7 py-3.5 bg-[#8EA087] hover:bg-[#193C1F] text-white rounded-2xl font-bold shadow-lg transition-all active:scale-95">+ New Consultation</button>
-          <button className="px-7 py-3.5 bg-white border-2 border-[#D0D5CB] text-[#193C1F] hover:bg-[#F2EDE4] rounded-2xl font-bold shadow-lg transition-all active:scale-95">+ New Report</button>
+          <button className="px-7 py-3.5 bg-[#8EA087] hover:bg-[#193C1F] text-white rounded-2xl font-bold text-[14px] transition-all shadow-lg">+ New Consultation</button>
+          <button className="px-7 py-3.5 bg-white border-2 border-[#D0D5CB] text-[#193C1F] rounded-2xl font-bold text-[14px] transition-all">+ New Report</button>
         </div>
       </div>
 
-      {/* 3. STAT CARDS DINAMIS */}
+      {/* STAT CARDS */}
       <div className="flex gap-8">
         {[
-          { label: "Total Consultations", val: userData.stats.totalConsultations, icon: <ConsultationIcon /> },
-          { label: "Reports Filed", val: userData.stats.reportsFiled, icon: <ReportsIcon /> },
-          { label: "Donations Received", val: userData.stats.totalDonations, icon: <DonationsIcon /> }
+          { label: "Total Consultations", val: RECENT_CONSULTATIONS.length.toString().padStart(2, '0'), icon: <ConsultationIcon /> },
+          { label: "Reports Filed", val: REPORT_STATUS.length.toString().padStart(2, '0'), icon: <ReportsIcon /> },
+          { label: "Donations Received", val: formatRupiah(totalDonationAmount), icon: <DonationsIcon /> }
         ].map((item, i) => (
-          <div key={i} className="bg-[#F7F3ED] p-8 rounded-[28px] border border-[#D0D5CB] flex items-center gap-6 flex-1 hover:shadow-md transition-shadow">
-            <div className="w-14 h-14 bg-[#EBE6DE] rounded-2xl flex items-center justify-center shadow-sm">{item.icon}</div>
+          <div key={i} className="bg-[#F7F3ED] p-8 rounded-[28px] border border-[#D0D5CB] flex items-center gap-6 flex-1 shadow-sm">
+            <div className="w-14 h-14 bg-[#EBE6DE] rounded-2xl flex items-center justify-center">{item.icon}</div>
             <div>
               <p className="text-[10px] uppercase font-black text-[#8EA087] tracking-widest">{item.label}</p>
-              <p className="text-[32px] font-bold text-[#193C1F] leading-none">{item.val}</p>
+              <p className={`${item.label === "Donations Received" ? "text-[24px]" : "text-[32px]"} font-bold text-[#193C1F] leading-none`}>
+                {item.val}
+              </p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* 4. TABEL DINAMIS (Ngambil dari Constants) */}
+      {/* TABLES SECTION */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
         
         {/* RECENT CONSULTATIONS */}
         <div className="bg-white border border-[#D0D5CB] rounded-[32px] overflow-hidden shadow-sm">
           <div className="p-8 border-b border-[#F7F3ED] flex justify-between items-center bg-[#FDFCFB]">
             <h3 className="font-bold text-[18px] text-[#193C1F]">Recent Consultations</h3>
-            <Link href="/dashboard/consultations"><button className="text-[11px] font-black text-[#8EA087] uppercase">View All</button></Link>
+            <Link href="/dashboard/consultations">
+              <button className="text-[11px] font-black text-[#8EA087] tracking-[0.2em] uppercase">View All</button>
+            </Link>
           </div>
           <table className="w-full text-left">
+            <thead className="bg-[#F7F3ED] text-[11px] text-[#8EA087] font-black uppercase tracking-widest">
+              <tr>
+                <th className="px-8 py-4">Doctor</th>
+                <th className="px-8 py-4">Date</th>
+                <th className="px-8 py-4">Status</th>
+              </tr>
+            </thead>
             <tbody className="text-[14px] text-[#193C1F]">
-              {RECENT_CONSULTATIONS.slice(0, 3).map((row, i) => (
-                <tr key={i} className="border-b border-[#F7F3ED] hover:bg-[#FDFCFB] transition-colors">
+              {filteredConsultations.slice(0, 3).map((row, i) => (
+                <tr key={i} className="border-b border-[#F7F3ED] hover:bg-[#FDFCFB]">
                   <td className="px-8 py-5 font-bold">{row.dr}</td>
                   <td className="px-8 py-5 opacity-70">{row.date}</td>
                   <td className="px-8 py-5">
@@ -91,18 +128,28 @@ export default function DashboardPage() {
               ))}
             </tbody>
           </table>
+          {filteredConsultations.length === 0 && <p className="p-10 text-center text-[#8EA087]">No consultations found.</p>}
         </div>
 
         {/* REPORT STATUS */}
         <div className="bg-white border border-[#D0D5CB] rounded-[32px] overflow-hidden shadow-sm">
           <div className="p-8 border-b border-[#F7F3ED] flex justify-between items-center bg-[#FDFCFB]">
             <h3 className="font-bold text-[18px] text-[#193C1F]">Report Status</h3>
-            <Link href="/dashboard/reports"><button className="text-[11px] font-black text-[#8EA087] uppercase">View All</button></Link>
+            <Link href="/dashboard/reports">
+              <button className="text-[11px] font-black text-[#8EA087] tracking-[0.2em] uppercase">View All</button>
+            </Link>
           </div>
           <table className="w-full text-left">
+            <thead className="bg-[#F7F3ED] text-[11px] text-[#8EA087] font-black uppercase tracking-widest">
+              <tr>
+                <th className="px-8 py-4">Report ID</th>
+                <th className="px-8 py-4">Type</th>
+                <th className="px-8 py-4">Status</th>
+              </tr>
+            </thead>
             <tbody className="text-[14px] text-[#193C1F]">
-              {REPORT_STATUS.slice(0, 3).map((row, i) => (
-                <tr key={i} className="border-b border-[#F7F3ED] hover:bg-[#FDFCFB] transition-colors">
+              {filteredReports.slice(0, 3).map((row, i) => (
+                <tr key={i} className="border-b border-[#F7F3ED] hover:bg-[#FDFCFB]">
                   <td className="px-8 py-5 font-bold">{row.id}</td>
                   <td className="px-8 py-5 opacity-70">{row.type}</td>
                   <td className="px-8 py-5">
@@ -114,6 +161,7 @@ export default function DashboardPage() {
               ))}
             </tbody>
           </table>
+          {filteredReports.length === 0 && <p className="p-10 text-center text-[#8EA087]">No reports found.</p>}
         </div>
 
       </div>

@@ -25,10 +25,10 @@ export const REPORT_STATUS = [
 ];
 
 export const DONATION_HISTORY = [
-  { name: "Anonymous Donor", date: "Oct 12, 2023", amount: "+$500.00", via: "Community Pool" },
-  { name: "NGO Support Fund", date: "Oct 01, 2023", amount: "+$1,200.00", via: "Medical Aid Grant" },
-  { name: "CareConnect Grant", date: "Sep 15, 2023", amount: "+$750.00", via: "Monthly Support" },
-  { name: "HealthCare Foundation", date: "Aug 22, 2023", amount: "+$1,000.00", via: "Recovery Fund" },
-  { name: "Global Relief", date: "Aug 10, 2023", amount: "+$300.00", via: "Social Aid" },
-  { name: "Community Support", date: "Aug 01, 2023", amount: "+$150.00", via: "Direct Gift" },
+  { name: "Anonymous Donor", date: "Oct 12, 2023", amount: "+Rp 5.000.000", via: "Community Pool" },
+  { name: "NGO Support Fund", date: "Oct 01, 2023", amount: "+Rp 12.500.000", via: "Medical Aid Grant" },
+  { name: "CareConnect Grant", date: "Sep 15, 2023", amount: "+Rp 7.500.000", via: "Monthly Support" },
+  { name: "HealthCare Foundation", date: "Aug 22, 2023", amount: "+Rp 10.000.000", via: "Recovery Fund" },
+  { name: "Global Relief", date: "Aug 10, 2023", amount: "+Rp 3.000.000", via: "Social Aid" },
+  { name: "Community Support", date: "Aug 01, 2023", amount: "+Rp 1.500.000", via: "Direct Gift" },
 ];
