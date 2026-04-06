@@ -2,6 +2,7 @@
 
 // Mengambil data dari constant (Pastikan di constants.ts sudah ada field password)
 import { INITIAL_PROFILE_DATA, UserProfile } from '@/constants';
+import Image from 'next/image';
 import Link from 'next/link';
 import React, { useRef, useState } from 'react';
 
@@ -174,9 +175,12 @@ export default function ProfileManagement() {
                 onClick={handleImageClick}
               >
                 <div className="w-44 h-44 rounded-[48px] overflow-hidden border-8 border-[#F7F3ED] shadow-inner bg-slate-100">
-                  <img
+                  <Image
                     src={profileImage}
                     alt="Avatar"
+                    width={176}
+                    height={176}
+                    unoptimized
                     className="w-full h-full object-cover transition-transform group-hover:scale-110"
                   />
                 </div>

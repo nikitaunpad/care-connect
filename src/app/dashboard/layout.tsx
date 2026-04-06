@@ -1,6 +1,7 @@
 'use client';
 
 import { authClient } from '@/lib/auth/auth-client';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
@@ -160,8 +161,15 @@ const LogoutIcon = () => (
   </svg>
 );
 
+type SidebarItemProps = {
+  icon: React.ElementType;
+  label: string;
+  href: string;
+  active: boolean;
+};
+
 // --- SIDEBAR ITEM COMPONENT ---
-const SidebarItem = ({ icon: Icon, label, href, active }: any) => (
+const SidebarItem = ({ icon: Icon, label, href, active }: SidebarItemProps) => (
   <Link href={href} className="no-underline">
     <div
       className={`flex items-center gap-3 px-6 py-3.5 cursor-pointer transition-all duration-200 group ${active ? 'bg-[#EBE6DE] text-[#193C1F] font-bold border-r-4 border-[#193C1F]' : 'text-[#193C1F] opacity-60 hover:opacity-100 hover:bg-[#EBE6DE]/50'}`}
@@ -337,9 +345,12 @@ export default function DashboardLayout({
                 <div
                   className={`w-12 h-12 rounded-2xl overflow-hidden border-2 shadow-md transition-all ${isProfileOpen ? 'border-[#8EA087] ring-4 ring-[#8EA087]/10' : 'border-white group-hover:border-[#8EA087]'}`}
                 >
-                  <img
+                  <Image
                     src={profileAvatar}
                     alt="avatar"
+                    width={48}
+                    height={48}
+                    unoptimized
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -397,7 +408,7 @@ export default function DashboardLayout({
               <p className="text-[#8EA087] text-[15px] leading-relaxed mb-10">
                 Your session on{' '}
                 <span className="font-bold text-[#193C1F]">CareConnect</span>{' '}
-                will end. You'll need to log in again later.
+                will end. You&apos;ll need to log in again later.
               </p>
 
               <div className="grid grid-cols-2 gap-4 w-full">

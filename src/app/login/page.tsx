@@ -124,24 +124,6 @@ const EyeIcon = () => (
   </svg>
 );
 
-const CheckIcon = () => (
-  <svg
-    width="12"
-    height="9"
-    viewBox="0 0 12 9"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M1.33334 4L4.83334 7.5L10.6667 1"
-      stroke="white"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
 const LargeLockIcon = () => (
   <svg
     width="48"
@@ -257,7 +239,11 @@ const FeatureCard = ({
   </div>
 );
 
-const InputField = ({ Icon, ...props }: any) => (
+type InputFieldProps = React.InputHTMLAttributes<HTMLInputElement> & {
+  Icon: React.ElementType;
+};
+
+const InputField = ({ Icon, ...props }: InputFieldProps) => (
   <div className="relative w-full">
     <span className="absolute left-[16px] top-1/2 -translate-y-1/2">
       <Icon />
