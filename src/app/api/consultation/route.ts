@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/supabase';
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
@@ -35,7 +35,9 @@ export async function POST(req: Request) {
 
     let attachmentUrl = null;
 
-    if (file && file.size > 0) {
+    const supabase = getSupabaseClient();
+
+    if (file && file.size > 0 && supabase) {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
 
@@ -56,6 +58,8 @@ export async function POST(req: Request) {
         .getPublicUrl(fileName);
 
       attachmentUrl = publicUrl.publicUrl;
+    } else if (file && file.size > 0) {
+      attachmentUrl = null;
     }
 
     if (!title || !category || !description || !date || !time) {
