@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { supabase } from "@/lib/supabase";
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
+import { headers } from 'next/headers';
+import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
@@ -22,49 +22,46 @@ export async function POST(req: Request) {
     //   );
     // }
 
-    const userId = "4FmE332k37qyeZEYsb4b45cb34jydLke";
+    const userId = '4FmE332k37qyeZEYsb4b45cb34jydLke';
 
     const formData = await req.formData();
 
-    const title = formData.get("title") as string;
-    const category = formData.get("nature") as string;
-    const description = formData.get("description") as string;
-    const date = formData.get("date") as string;
-    const time = formData.get("time") as string;
-    const isAnonymous = formData.get("isAnonymous") === "on";
+    const title = formData.get('title') as string;
+    const category = formData.get('nature') as string;
+    const description = formData.get('description') as string;
+    const date = formData.get('date') as string;
+    const time = formData.get('time') as string;
+    const isAnonymous = formData.get('isAnonymous') === 'on';
 
-    const file = formData.get("document") as File;
+    const file = formData.get('document') as File;
 
     let attachmentUrl = null;
 
     if (file && file.size > 0) {
-      const fileExt = file.name.split(".").pop();
+      const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
 
       const { data, error } = await supabase.storage
-        .from("consultation-files")
+        .from('consultation-files')
         .upload(fileName, file);
 
       if (error) {
         console.error(error);
         return NextResponse.json(
-          { error: "File upload failed" },
-          { status: 500 }
+          { error: 'File upload failed' },
+          { status: 500 },
         );
       }
 
       const { data: publicUrl } = supabase.storage
-        .from("consultation-files")
+        .from('consultation-files')
         .getPublicUrl(fileName);
 
       attachmentUrl = publicUrl.publicUrl;
     }
 
     if (!title || !category || !description || !date || !time) {
-      return NextResponse.json(
-        { error: "Missing fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
 
     const selectedDate = new Date(date);
@@ -121,7 +118,7 @@ export async function POST(req: Request) {
     //   );
     // }
 
-    const psychologistId = "4FmE332k37qyeZEYsb4b45cb34jydLke";
+    const psychologistId = '4FmE332k37qyeZEYsb4b45cb34jydLke';
 
     //5. CREATE CONSULTATION
     const consultation = await prisma.consultation.create({
@@ -139,24 +136,20 @@ export async function POST(req: Request) {
         time: selectedTime,
 
         isAnonymous,
-        status: "SCHEDULED",
+        status: 'SCHEDULED',
 
-        attachmentUrl
-      }
+        attachmentUrl,
+      },
     });
 
     //6. RESPONSE SUCCESS
     return NextResponse.json({
       success: true,
-      data: consultation
+      data: consultation,
     });
-
   } catch (error) {
-    console.error("CONSULTATION ERROR FULL:", error);
+    console.error('CONSULTATION ERROR FULL:', error);
 
-    return NextResponse.json(
-      { error: String(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
