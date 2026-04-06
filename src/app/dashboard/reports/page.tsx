@@ -1,18 +1,17 @@
-'use client';
+"use client";
 
-import { REPORT_STATUS } from '@/constants';
-import { useSearchParams } from 'next/navigation';
-import React, { Suspense } from 'react';
+import React from "react";
+import { useSearchParams } from "next/navigation";
+import { REPORT_STATUS } from "@/constants";
 
-function ReportsContent() {
+export default function ReportsPage() {
   const searchParams = useSearchParams();
-  const query = searchParams.get('search')?.toLowerCase() || '';
+  const query = searchParams.get("search")?.toLowerCase() || "";
 
   // Filter berdasarkan ID Laporan atau Tipe Laporan
-  const filteredData = REPORT_STATUS.filter(
-    (item) =>
-      item.id.toLowerCase().includes(query) ||
-      item.type.toLowerCase().includes(query),
+  const filteredData = REPORT_STATUS.filter((item) =>
+    item.id.toLowerCase().includes(query) || 
+    item.type.toLowerCase().includes(query)
   );
 
   return (
@@ -20,9 +19,7 @@ function ReportsContent() {
       <div>
         <h2 className="text-[32px] font-black text-[#193C1F]">My Reports</h2>
         <p className="text-[#8EA087] font-medium">
-          {query
-            ? `Showing results for "${query}"`
-            : 'Track the status of your submitted reports.'}
+          {query ? `Showing results for "${query}"` : "Track the status of your submitted reports."}
         </p>
       </div>
 
@@ -39,53 +36,26 @@ function ReportsContent() {
           <tbody className="text-[14px] text-[#193C1F]">
             {filteredData.length > 0 ? (
               filteredData.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-b border-[#F7F3ED] hover:bg-[#FDFCFB] transition-colors"
-                >
+                <tr key={row.id} className="border-b border-[#F7F3ED] hover:bg-[#FDFCFB] transition-colors">
                   <td className="px-8 py-6 font-bold">{row.id}</td>
-                  <td className="px-8 py-6 font-medium opacity-80">
-                    {row.type}
-                  </td>
+                  <td className="px-8 py-6 font-medium opacity-80">{row.type}</td>
                   <td className="px-8 py-6 opacity-60">{row.date}</td>
                   <td className="px-8 py-6">
-                    <span
-                      className={`px-4 py-1.5 rounded-full text-[10px] font-black ${
-                        row.status === 'PENDING REVIEW'
-                          ? 'bg-[#D1B698]/30 text-[#D1B698]'
-                          : row.status === 'REJECTED'
-                            ? 'bg-red-100 text-red-600'
-                            : 'bg-[#EBE6DE]'
-                      }`}
-                    >
+                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black ${
+                      row.status === 'PENDING REVIEW' ? 'bg-[#D1B698]/30 text-[#D1B698]' : 
+                      row.status === 'REJECTED' ? 'bg-red-100 text-red-600' : 'bg-[#EBE6DE]'
+                    }`}>
                       {row.status}
                     </span>
                   </td>
                 </tr>
               ))
             ) : (
-              <tr>
-                <td
-                  colSpan={4}
-                  className="p-20 text-center text-[#8EA087] font-bold"
-                >
-                  No reports found.
-                </td>
-              </tr>
+              <tr><td colSpan={4} className="p-20 text-center text-[#8EA087] font-bold">No reports found.</td></tr>
             )}
           </tbody>
         </table>
       </div>
     </div>
-  );
-}
-
-export default function ReportsPage() {
-  return (
-    <Suspense
-      fallback={<div className="p-12 text-[#8EA087]">Loading reports...</div>}
-    >
-      <ReportsContent />
-    </Suspense>
   );
 }
