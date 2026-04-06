@@ -1,25 +1,30 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useSearchParams } from "next/navigation";
-import { RECENT_CONSULTATIONS } from "@/constants";
+import { RECENT_CONSULTATIONS } from '@/constants';
+import { useSearchParams } from 'next/navigation';
+import React, { Suspense } from 'react';
 
-export default function ConsultationsPage() {
+function ConsultationsContent() {
   const searchParams = useSearchParams();
-  const query = searchParams.get("search")?.toLowerCase() || "";
+  const query = searchParams.get('search')?.toLowerCase() || '';
 
   // Filter berdasarkan Nama Dokter atau Spesialisasi
-  const filteredData = RECENT_CONSULTATIONS.filter((item) =>
-    item.dr.toLowerCase().includes(query) || 
-    item.spec.toLowerCase().includes(query)
+  const filteredData = RECENT_CONSULTATIONS.filter(
+    (item) =>
+      item.dr.toLowerCase().includes(query) ||
+      item.spec.toLowerCase().includes(query),
   );
 
   return (
     <div className="p-12 space-y-8 animate-fade-in">
       <div>
-        <h2 className="text-[32px] font-black text-[#193C1F]">My Consultations</h2>
+        <h2 className="text-[32px] font-black text-[#193C1F]">
+          My Consultations
+        </h2>
         <p className="text-[#8EA087] font-medium">
-          {query ? `Showing results for "${query}"` : "View and manage your consultation history."}
+          {query
+            ? `Showing results for "${query}"`
+            : 'View and manage your consultation history.'}
         </p>
       </div>
 
@@ -36,30 +41,60 @@ export default function ConsultationsPage() {
           <tbody className="text-[14px] text-[#193C1F]">
             {filteredData.length > 0 ? (
               filteredData.map((row) => (
-                <tr key={row.id} className="border-b border-[#F7F3ED] hover:bg-[#FDFCFB] transition-colors">
+                <tr
+                  key={row.id}
+                  className="border-b border-[#F7F3ED] hover:bg-[#FDFCFB] transition-colors"
+                >
                   <td className="px-8 py-6">
                     <p className="font-bold">{row.dr}</p>
-                    <p className="text-[12px] opacity-60 font-medium">{row.spec}</p>
+                    <p className="text-[12px] opacity-60 font-medium">
+                      {row.spec}
+                    </p>
                   </td>
                   <td className="px-8 py-6 font-bold">{row.date}</td>
                   <td className="px-8 py-6">
-                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black ${
-                      row.status === 'UPCOMING' ? 'bg-[#D1B698]/20 text-[#D1B698]' : 'bg-[#EBE6DE]'
-                    }`}>
+                    <span
+                      className={`px-4 py-1.5 rounded-full text-[10px] font-black ${
+                        row.status === 'UPCOMING'
+                          ? 'bg-[#D1B698]/20 text-[#D1B698]'
+                          : 'bg-[#EBE6DE]'
+                      }`}
+                    >
                       {row.status}
                     </span>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <button className="text-[12px] font-bold text-[#8EA087] hover:text-[#193C1F] underline">Details</button>
+                    <button className="text-[12px] font-bold text-[#8EA087] hover:text-[#193C1F] underline">
+                      Details
+                    </button>
                   </td>
                 </tr>
               ))
             ) : (
-              <tr><td colSpan={4} className="p-20 text-center text-[#8EA087] font-bold">No consultations found.</td></tr>
+              <tr>
+                <td
+                  colSpan={4}
+                  className="p-20 text-center text-[#8EA087] font-bold"
+                >
+                  No consultations found.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
       </div>
     </div>
+  );
+}
+
+export default function ConsultationsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-12 text-[#8EA087]">Loading consultations...</div>
+      }
+    >
+      <ConsultationsContent />
+    </Suspense>
   );
 }

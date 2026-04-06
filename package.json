@@ -6,7 +6,20 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "test": "vitest",
+    "lint": "eslint",
+    "format:write": "prettier --write \"**/*.{js,jsx,ts,tsx,mjs,json,yml,yaml,css,scss}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,mjs,json,yml,yaml,css,scss}\"",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,yml,yaml,css,scss}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.6.0",
@@ -22,12 +35,18 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@types/node": "^20",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "3.8.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.2"
   }
 }

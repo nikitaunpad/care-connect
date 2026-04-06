@@ -1,26 +1,31 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useSearchParams } from "next/navigation";
-import { DONATION_HISTORY } from "@/constants";
+import { DONATION_HISTORY } from '@/constants';
+import { useSearchParams } from 'next/navigation';
+import React, { Suspense } from 'react';
 
-export default function DonationsPage() {
+function DonationsContent() {
   const searchParams = useSearchParams();
-  const query = searchParams.get("search")?.toLowerCase() || "";
+  const query = searchParams.get('search')?.toLowerCase() || '';
 
   // Filter berdasarkan Nama Donor atau Metode (Via)
-  const filteredData = DONATION_HISTORY.filter((item) =>
-    item.name.toLowerCase().includes(query) || 
-    item.via.toLowerCase().includes(query)
+  const filteredData = DONATION_HISTORY.filter(
+    (item) =>
+      item.name.toLowerCase().includes(query) ||
+      item.via.toLowerCase().includes(query),
   );
 
   return (
     <div className="p-12 space-y-8 animate-fade-in">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-[32px] font-black text-[#193C1F]">Donation History</h2>
+          <h2 className="text-[32px] font-black text-[#193C1F]">
+            Donation History
+          </h2>
           <p className="text-[#8EA087] font-medium">
-            {query ? `Showing results for "${query}"` : "Your contributions to the community."}
+            {query
+              ? `Showing results for "${query}"`
+              : 'Your contributions to the community.'}
           </p>
         </div>
       </div>
@@ -38,19 +43,43 @@ export default function DonationsPage() {
           <tbody className="text-[14px] text-[#193C1F]">
             {filteredData.length > 0 ? (
               filteredData.map((row, i) => (
-                <tr key={i} className="border-b border-[#F7F3ED] hover:bg-[#FDFCFB] transition-colors">
+                <tr
+                  key={i}
+                  className="border-b border-[#F7F3ED] hover:bg-[#FDFCFB] transition-colors"
+                >
                   <td className="px-8 py-6 font-bold">{row.name}</td>
                   <td className="px-8 py-6 opacity-60">{row.date}</td>
-                  <td className="px-8 py-6 font-medium italic text-[#8EA087]">{row.via}</td>
-                  <td className="px-8 py-6 text-right font-black text-[16px]">{row.amount}</td>
+                  <td className="px-8 py-6 font-medium italic text-[#8EA087]">
+                    {row.via}
+                  </td>
+                  <td className="px-8 py-6 text-right font-black text-[16px]">
+                    {row.amount}
+                  </td>
                 </tr>
               ))
             ) : (
-              <tr><td colSpan={4} className="p-20 text-center text-[#8EA087] font-bold">No donations found.</td></tr>
+              <tr>
+                <td
+                  colSpan={4}
+                  className="p-20 text-center text-[#8EA087] font-bold"
+                >
+                  No donations found.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
       </div>
     </div>
+  );
+}
+
+export default function DonationsPage() {
+  return (
+    <Suspense
+      fallback={<div className="p-12 text-[#8EA087]">Loading donations...</div>}
+    >
+      <DonationsContent />
+    </Suspense>
   );
 }
