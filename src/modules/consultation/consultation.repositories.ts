@@ -1,12 +1,10 @@
 import { prisma } from '@/lib/prisma';
 
-import type { CreateConsultationRepositoryInput } from './consultation.types';
-
-type PsychologistScheduleRecord = {
-  userId: string;
-  startTime: Date;
-  endTime: Date;
-};
+import type {
+  CreateConsultationRepositoryInput,
+  FindExistingConsultationInput,
+  PsychologistScheduleRecord,
+} from './consultation.types';
 
 export const getPsychologistSchedulesByDay = async (
   dayOfWeek: number,
@@ -26,6 +24,7 @@ export const getConsultationsByDate = async (date: Date) => {
     where: { date },
     select: {
       time: true,
+      psychologistId: true,
     },
   });
 };
@@ -36,4 +35,10 @@ export const createConsultation = async (
   return prisma.consultation.create({
     data: consultationData,
   });
+};
+
+export const findExistingConsultation = async (
+  data: FindExistingConsultationInput,
+) => {
+  return prisma.consultation.findFirst({ where: data });
 };

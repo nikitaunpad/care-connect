@@ -19,6 +19,13 @@ export type ConsultationScheduleSlot = {
   psychologistCount: number;
   bookedCount: number;
   available: boolean;
+  availablePsychologistIds: string[];
+};
+
+export type PsychologistScheduleRecord = {
+  userId: string;
+  startTime: Date;
+  endTime: Date;
 };
 
 export type CreateConsultationRepositoryInput = {
@@ -32,4 +39,10 @@ export type CreateConsultationRepositoryInput = {
   isAnonymous: boolean;
   status: ConsultationStatus;
   attachmentUrl: string | null;
+};
+
+export type FindExistingConsultationInput = {
+  date: Date;
+  time: Date;
+  psychologistId: string;
 };
