@@ -65,6 +65,25 @@ export class ConsultationService {
         attachmentUrl = publicUrl.publicUrl;
       }
 
+      // Get available psychologists for the selected time slot
+      const slots = await this.getScheduleAvailability(date);
+      const selectedSlot = slots.find((slot) => slot.time === time);
+
+      if (
+        !selectedSlot ||
+        !selectedSlot.available ||
+        selectedSlot.availablePsychologistIds.length === 0
+      ) {
+        throw Errors.unprocessable('Selected time slot is no longer available');
+      }
+
+      // Randomly assign a psychologist from available ones
+      const randomIndex = Math.floor(
+        Math.random() * selectedSlot.availablePsychologistIds.length,
+      );
+      const assignedPsychologistId =
+        selectedSlot.availablePsychologistIds[randomIndex];
+
       // Parse time string as WIB and convert to UTC for storage
       const WIB_OFFSET = 7 * 60 * 60 * 1000; // 7 hours in milliseconds
       const [hours, minutes] = time.split(':').map(Number);
@@ -75,7 +94,7 @@ export class ConsultationService {
 
       const consultation = await createConsultationRepository({
         userId,
-        psychologistId: null,
+        psychologistId: assignedPsychologistId,
         title,
         category: nature,
         description,
