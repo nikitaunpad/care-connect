@@ -1,12 +1,21 @@
+'use client';
+
+import { authClient } from '@/lib/auth/auth-client';
 import Link from 'next/link';
 import React from 'react';
 
 export default function LandingPage() {
+  const { data: session } = authClient.useSession();
+  const isLoggedIn = !!session?.user;
+
   return (
     <div className="font-sans antialiased bg-[#F7F3ED] text-[#193C1F] min-h-screen">
       {/* Navigation */}
-      <header className="w-full bg-[#F7F3ED] py-6 px-12 flex justify-between items-center border-b border-[#D0D5CB]">
-        <div className="flex items-center gap-2">
+      <header className="sticky top-0 z-[100] w-full bg-[#F7F3ED]/90 backdrop-blur-md py-6 px-12 flex justify-between items-center border-b border-[#D0D5CB]">
+        <Link
+          href="/"
+          className="flex items-center gap-2 transition-opacity hover:opacity-80"
+        >
           <div className="w-10 h-10 bg-[#193C1F] rounded-lg flex items-center justify-center text-[#F7F3ED]">
             <svg
               className="w-6 h-6"
@@ -24,36 +33,36 @@ export default function LandingPage() {
             </svg>
           </div>
           <span className="text-2xl font-bold text-[#193C1F]">CareConnect</span>
-        </div>
+        </Link>
         <nav className="flex items-center gap-12 text-[#193C1F] font-medium">
-          <Link
-            href="/landingPage"
-            className="hover:text-[#8EA087] transition-colors"
-          >
+          <Link href="/" className="hover:text-[#8EA087] transition-colors">
             Home
           </Link>
           <Link
-            href="/consultation"
+            href={isLoggedIn ? '/consultation' : '/'}
             className="hover:text-[#8EA087] transition-colors"
           >
             Consultation
           </Link>
-          <Link href="#" className="hover:text-[#8EA087] transition-colors">
+          <Link
+            href={isLoggedIn ? '/publicreports' : '/'}
+            className="hover:text-[#8EA087] transition-colors"
+          >
             Reports
           </Link>
-          <Link href="#" className="hover:text-[#8EA087] transition-colors">
+          <Link href="/" className="hover:text-[#8EA087] transition-colors">
             Forum
           </Link>
           <Link
-            href="/donation"
+            href={isLoggedIn ? '/donation' : '/'}
             className="hover:text-[#8EA087] transition-colors"
           >
             Donation
           </Link>
         </nav>
-        <Link href="/login">
+        <Link href={isLoggedIn ? '/dashboard' : '/login'}>
           <button className="bg-[#8EA087] text-[#F7F3ED] px-8 py-2.5 rounded-lg font-bold hover:bg-[#193C1F] transition-colors">
-            Login/Profile
+            {isLoggedIn ? 'Dashboard' : 'Login/Profile'}
           </button>
         </Link>
       </header>
@@ -70,15 +79,17 @@ export default function LandingPage() {
             healing starts with a single step.
           </p>
           <div className="flex gap-4">
-            <Link href="/consultation">
+            <Link href={isLoggedIn ? '/consultation' : '/'}>
               <button className="bg-[#8EA087] text-[#F7F3ED] px-10 py-4 rounded-lg font-bold text-lg shadow-sm hover:bg-[#193C1F] transition-colors h-full">
                 Consult Now
               </button>
             </Link>
-            <button className="bg-[#D0D5CB] text-[#193C1F] px-10 py-4 rounded-lg font-bold text-lg border border-[#8EA087] hover:bg-[#EDE4D8] transition-colors">
-              Report Incident
-            </button>
-            <Link href="/donation">
+            <Link href={isLoggedIn ? '/report' : '/'}>
+              <button className="bg-[#D0D5CB] text-[#193C1F] px-10 py-4 rounded-lg font-bold text-lg border border-[#8EA087] hover:bg-[#EDE4D8] transition-colors">
+                Report Incident
+              </button>
+            </Link>
+            <Link href={isLoggedIn ? '/donation' : '/'}>
               <button className="bg-[#F7F3ED] text-[#193C1F] px-10 py-4 rounded-lg font-bold text-lg border border-[#D1B698] hover:bg-[#EDE4D8] transition-colors h-full">
                 Donate
               </button>

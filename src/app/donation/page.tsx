@@ -143,13 +143,11 @@ const DonationContent = () => {
       )}
 
       {/* HEADER */}
-      <div className="sticky top-0 z-[100] w-full bg-[#F7F3ED]/80 backdrop-blur-md border-b border-[#D0D5CB]/30">
-        <Header
-          withSearch={false}
-          withLogo={true}
-          onLogoutClick={() => setIsLogoutAlertOpen(true)}
-        />
-      </div>
+      <Header
+        withSearch={false}
+        withLogo={true}
+        onLogoutClick={() => setIsLogoutAlertOpen(true)}
+      />
 
       {/* MAIN CONTENT */}
       <main className="flex-grow max-w-6xl mx-auto px-6 py-12 w-full grid grid-cols-1 md:grid-cols-12 gap-8">
