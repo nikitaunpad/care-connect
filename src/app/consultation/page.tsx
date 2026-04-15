@@ -255,13 +255,11 @@ export default function ConsultationPage() {
       )}
 
       {/* Header */}
-      <div className="sticky top-0 z-[100] w-full bg-[#F7F3ED]/80 backdrop-blur-md border-b border-[#D0D5CB]/30">
-        <Header
-          withSearch={false}
-          withLogo={true}
-          onLogoutClick={() => setIsLogoutAlertOpen(true)}
-        />
-      </div>
+      <Header
+        withSearch={false}
+        withLogo={true}
+        onLogoutClick={() => setIsLogoutAlertOpen(true)}
+      />
 
       {/* Main Content */}
       <main className="flex-grow flex items-center justify-center py-16 px-4">

@@ -50,13 +50,11 @@ export default function ConsultationChatContent() {
         }}
       />
 
-      <div className="sticky top-0 z-[100] w-full bg-[#F7F3ED]/80 backdrop-blur-md border-b border-[#D0D5CB]/30">
-        <Header
-          withSearch={false}
-          withLogo={true}
-          onLogoutClick={() => setIsLogoutAlertOpen(true)}
-        />
-      </div>
+      <Header
+        withSearch={false}
+        withLogo={true}
+        onLogoutClick={() => setIsLogoutAlertOpen(true)}
+      />
 
       <div className="flex flex-1 overflow-hidden">
         <aside className="w-80 flex flex-col border-r border-[#D0D5CB] bg-[#F7F3ED] shrink-0">

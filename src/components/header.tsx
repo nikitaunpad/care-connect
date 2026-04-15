@@ -128,7 +128,7 @@ export const Header = ({
 
   return (
     <>
-      <header className="h-[90px] border-b border-[#D0D5CB] flex items-center justify-between px-12 bg-[#F7F3ED]/80 backdrop-blur-md shrink-0 relative z-[100]">
+      <header className="h-[90px] w-full sticky top-0 border-b border-[#D0D5CB] flex items-center justify-between px-12 bg-[#F7F3ED]/80 backdrop-blur-md shrink-0 z-[100]">
         <div className="flex items-center gap-8 flex-grow">
           {withLogo && (
             <div className="shrink-0">
