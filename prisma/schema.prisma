@@ -32,6 +32,7 @@ model User {
   donations     Donation[]
   consultationsAsUser  Consultation[] @relation("UserConsultations")
   consultationsAsPsych Consultation[] @relation("PsychologistConsultations")
+  consultationChats    ConsultationChat[]
   channelMemberships   ChannelMember[]
   chats                Chat[]
   schedules      Schedule[]
@@ -190,6 +191,8 @@ model Consultation {
   user         User    @relation("UserConsultations", fields: [userId], references: [id])
   psychologist User?   @relation("PsychologistConsultations", fields: [psychologistId], references: [id], onDelete: SetNull)
 
+  chats        ConsultationChat[]
+
   @@map("consultations")
 }
 
@@ -273,6 +276,24 @@ model Chat {
   replies Chat[]  @relation("ChatReplies")
 
   @@map("chats")
+}
+
+model ConsultationChat {
+  id             Int       @id @default(autoincrement()) @map("chat_id")
+  consultationId Int       @map("consult_id")
+  userId         String    @map("user_id")
+  content        String    @db.Text
+  mediaUrl       String?   @db.Text @map("media_url")
+  isAnonymous    Boolean   @default(false) @map("is_anonymous")
+  replyToId      Int?      @map("reply_to_id")
+  timestamp      DateTime  @default(now())
+
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id])
+  replyTo        ConsultationChat?  @relation("ConsultationChatReplies", fields: [replyToId], references: [id])
+  replies        ConsultationChat[] @relation("ConsultationChatReplies")
+
+  @@map("consultation_chats")
 }
 
 enum ChannelType {
