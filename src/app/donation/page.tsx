@@ -113,6 +113,19 @@ const DonationContent = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const handlePageShow = () => {
+      setMessage({ type: '', text: '' });
+      setIsSubmitting(false);
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, []);
+
   const handleDonate = async () => {
     if (!amount || amount <= 0) {
       setMessage({ type: 'error', text: 'Please enter a valid amount.' });
@@ -164,11 +177,6 @@ const DonationContent = () => {
         setIsSubmitting(false);
         return;
       }
-
-      setMessage({
-        type: 'success',
-        text: 'Donation created successfully. Redirecting to Midtrans...',
-      });
 
       window.location.assign(redirectUrl);
     } catch (error) {
