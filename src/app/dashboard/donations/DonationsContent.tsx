@@ -1,14 +1,14 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type DonationItem = {
   id: number;
   amount: number;
   paymentMethod: string;
   paymentStatus: string;
-  timestamp: Date;
+  timestamp: string;
   report: {
     title: string;
   };
@@ -25,12 +25,12 @@ const formatRupiah = (value: number) =>
     minimumFractionDigits: 0,
   }).format(value);
 
-const formatDateLabel = (value: Date) =>
+const formatDateLabel = (value: string) =>
   new Intl.DateTimeFormat('id-ID', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  }).format(value);
+  }).format(new Date(value));
 
 const formatPaymentMethod = (value: string) =>
   value
@@ -73,36 +73,173 @@ const getPaymentNotice = (payment: string | null, orderId: string | null) => {
   return null;
 };
 
+const mapTransactionStatusToNotice = (transactionStatus: string | null) => {
+  if (!transactionStatus) {
+    return null;
+  }
+
+  const normalized = transactionStatus.toLowerCase();
+
+  if (normalized === 'pending') {
+    return 'pending';
+  }
+
+  if (normalized === 'settlement' || normalized === 'capture') {
+    return 'success';
+  }
+
+  if (
+    normalized === 'deny' ||
+    normalized === 'cancel' ||
+    normalized === 'expire' ||
+    normalized === 'failure'
+  ) {
+    return 'error';
+  }
+
+  return null;
+};
+
+const mapDonationStatusToNotice = (status: string | undefined) => {
+  if (!status) {
+    return null;
+  }
+
+  const normalized = status.toUpperCase();
+
+  if (normalized === 'PAID') {
+    return 'success';
+  }
+
+  if (normalized === 'PENDING') {
+    return 'pending';
+  }
+
+  if (
+    normalized === 'FAILED' ||
+    normalized === 'EXPIRED' ||
+    normalized === 'CANCELLED'
+  ) {
+    return 'error';
+  }
+
+  return null;
+};
+
 export default function DonationsContent({ donations }: DonationsContentProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const query = searchParams.get('search')?.toLowerCase() || '';
   const payment = searchParams.get('payment');
-  const orderId = searchParams.get('orderId');
-  const paymentNotice = getPaymentNotice(payment, orderId);
+  const orderId = searchParams.get('orderId') || searchParams.get('order_id');
+  const transactionStatus = searchParams.get('transaction_status');
+  const initialNotice = useMemo(
+    () =>
+      mapTransactionStatusToNotice(transactionStatus) ||
+      (payment === 'success' || payment === 'pending' || payment === 'error'
+        ? payment
+        : null),
+    [payment, transactionStatus],
+  );
+  const [resolvedPayment, setResolvedPayment] = useState<string | null>(
+    initialNotice,
+  );
+  const paymentNotice = getPaymentNotice(resolvedPayment, orderId);
 
   useEffect(() => {
-    if (!payment && !orderId) {
+    setResolvedPayment(initialNotice);
+  }, [initialNotice]);
+
+  useEffect(() => {
+    if (!payment && !orderId && !transactionStatus) {
       return;
     }
+
+    const shouldSyncStatus = !!orderId;
 
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.delete('payment');
     nextParams.delete('orderId');
+    nextParams.delete('order_id');
+    nextParams.delete('transaction_status');
+    nextParams.delete('status_code');
 
     const nextQuery = nextParams.toString();
     const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
 
-    // Replace URL so status notification does not reappear on page refresh.
-    const timeout = setTimeout(() => {
-      router.replace(nextUrl);
-    }, 2500);
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    let cancelled = false;
+
+    const wait = (ms: number) =>
+      new Promise((resolve) => {
+        setTimeout(resolve, ms);
+      });
+
+    const runSync = async () => {
+      if (shouldSyncStatus) {
+        const maxAttempts = payment === 'success' ? 6 : 3;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+          if (cancelled) {
+            return;
+          }
+
+          try {
+            const res = await fetch('/api/donation/sync', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ orderId }),
+            });
+
+            if (res.ok) {
+              const payload = await res.json().catch(() => ({}));
+              const currentStatus = payload?.data?.paymentStatus as
+                | string
+                | undefined;
+
+              const syncedNotice = mapDonationStatusToNotice(currentStatus);
+              if (syncedNotice) {
+                setResolvedPayment(syncedNotice);
+              }
+
+              router.refresh();
+
+              if (currentStatus && currentStatus !== 'PENDING') {
+                break;
+              }
+            }
+          } catch (error) {
+            console.error('Failed to sync donation status:', error);
+          }
+
+          if (attempt < maxAttempts - 1) {
+            await wait(1500);
+          }
+        }
+      }
+
+      if (cancelled) {
+        return;
+      }
+
+      // Replace URL so status notification does not reappear on page refresh.
+      timeout = setTimeout(() => {
+        router.replace(nextUrl);
+      }, 2500);
+    };
+
+    void runSync();
 
     return () => {
-      clearTimeout(timeout);
+      cancelled = true;
+      if (timeout) {
+        clearTimeout(timeout);
+      }
     };
-  }, [orderId, pathname, payment, router, searchParams]);
+  }, [orderId, pathname, payment, router, searchParams, transactionStatus]);
 
   const filteredData = donations.filter(
     (item) =>
