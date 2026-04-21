@@ -32,6 +32,7 @@ model User {
   donations     Donation[]
   consultationsAsUser  Consultation[] @relation("UserConsultations")
   consultationsAsPsych Consultation[] @relation("PsychologistConsultations")
+  consultationChats    ConsultationChat[]
   channelMemberships   ChannelMember[]
   chats                Chat[]
   schedules      Schedule[]
@@ -104,21 +105,60 @@ enum Gender {
   PREFER_NOT_TO_SAY
 }
 
+enum ReportCategory {
+  PHYSICAL
+  SEXUAL
+  PSYCHOLOGICAL
+  OTHER
+}
+
 model Report {
-  id          Int          @id @default(autoincrement()) @map("report_id")
-  userId      String       @map("user_id")
-  title       String       @db.VarChar(255)
-  description String       @db.VarChar(255)
-  location    String       @db.VarChar(255)
-  timestamp   DateTime     @default(now())
-  status      ReportStatus
-  isAnonymous Boolean      @default(false) @map("is_anonymous")
-  isPublic    Boolean      @default(true) @map("is_public")
+  id            Int            @id @default(autoincrement()) @map("report_id")
+  userId        String         @map("user_id")
+
+  title         String         @db.VarChar(255)
+  category      ReportCategory @map("category")
+  incidentDate  DateTime       @db.Date @map("incident_date")
+
+  province      String         @db.VarChar(120)
+  city          String         @db.VarChar(120)
+  district      String         @db.VarChar(120)
+  address       String?        @db.VarChar(255)
+
+  description   String         @db.Text
+
+  status        ReportStatus   @default(PENDING)
+  isAnonymous   Boolean        @default(false) @map("is_anonymous")
+  isPublic      Boolean        @default(true) @map("is_public")
+
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
 
   user          User           @relation(fields: [userId], references: [id])
   donations     Donation[]
+  evidences     ReportEvidence[]
 
+  @@index([userId])
+  @@index([status])
+  @@index([incidentDate])
+  @@index([isPublic, status])
+  @@index([category])
   @@map("reports")
+}
+
+model ReportEvidence {
+  id          Int      @id @default(autoincrement()) @map("evidence_id")
+  reportId    Int      @map("report_id")
+  fileName    String   @map("file_name") @db.VarChar(255)
+  fileUrl     String   @map("file_url") @db.Text
+  mimeType    String   @map("mime_type") @db.VarChar(120)
+  fileSize    Int      @map("file_size")
+  uploadedAt  DateTime @default(now()) @map("uploaded_at")
+
+  report      Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@map("report_evidences")
 }
 
 enum ReportStatus {
@@ -151,6 +191,8 @@ model Consultation {
   user         User    @relation("UserConsultations", fields: [userId], references: [id])
   psychologist User?   @relation("PsychologistConsultations", fields: [psychologistId], references: [id], onDelete: SetNull)
 
+  chats        ConsultationChat[]
+
   @@map("consultations")
 }
 
@@ -165,7 +207,8 @@ model Donation {
   id            Int           @id @default(autoincrement()) @map("donation_id")
   userId        String        @map("user_id")
   reportId      Int           @map("report_id")
-  amount        Float
+
+  amount        Decimal       @db.Decimal(15, 2)
   paymentMethod PaymentMethod @map("payment_method")
   paymentStatus PaymentStatus @map("payment_status")
   timestamp     DateTime      @default(now())
@@ -185,9 +228,11 @@ enum PaymentMethod {
 
 enum PaymentStatus {
   PENDING
-  SUCCESS
+  PAID
   FAILED
+  EXPIRED
   REFUNDED
+  CANCELLED
 }
 
 model Channel {
@@ -234,6 +279,24 @@ model Chat {
   replies Chat[]  @relation("ChatReplies")
 
   @@map("chats")
+}
+
+model ConsultationChat {
+  id             Int       @id @default(autoincrement()) @map("chat_id")
+  consultationId Int       @map("consult_id")
+  userId         String    @map("user_id")
+  content        String    @db.Text
+  mediaUrl       String?   @db.Text @map("media_url")
+  isAnonymous    Boolean   @default(false) @map("is_anonymous")
+  replyToId      Int?      @map("reply_to_id")
+  timestamp      DateTime  @default(now())
+
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id])
+  replyTo        ConsultationChat?  @relation("ConsultationChatReplies", fields: [replyToId], references: [id])
+  replies        ConsultationChat[] @relation("ConsultationChatReplies")
+
+  @@map("consultation_chats")
 }
 
 enum ChannelType {

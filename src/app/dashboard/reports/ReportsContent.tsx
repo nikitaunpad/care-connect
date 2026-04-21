@@ -1,12 +1,12 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type ReportItem = {
   id: number;
   title: string;
   status: string;
-  timestamp: Date;
+  createdAt: Date;
 };
 
 type ReportsContentProps = {
@@ -43,6 +43,7 @@ const getStatusBadgeClass = (status: string) => {
 };
 
 export default function ReportsContent({ reports }: ReportsContentProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const query = searchParams.get('search')?.toLowerCase() || '';
 
@@ -54,14 +55,22 @@ export default function ReportsContent({ reports }: ReportsContentProps) {
   );
 
   return (
-    <div className="p-12 space-y-8 animate-fade-in">
-      <div>
-        <h2 className="text-[32px] font-black text-[#193C1F]">My Reports</h2>
-        <p className="text-[#8EA087] font-medium">
-          {query
-            ? `Showing results for \"${query}\"`
-            : 'Track the status of your submitted reports.'}
-        </p>
+    <div className="space-y-8 animate-fade-in">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-[32px] font-black text-[#193C1F]">My Reports</h2>
+          <p className="text-[#8EA087] font-medium">
+            {query
+              ? `Showing results for "${query}"`
+              : 'Track the status of your submitted reports.'}
+          </p>
+        </div>
+        <button
+          onClick={() => router.push('/report')}
+          className="px-7 py-3.5 bg-[#8EA087] hover:bg-[#193C1F] text-white rounded-2xl font-bold text-[14px] transition-all shadow-lg whitespace-nowrap"
+        >
+          + New Report
+        </button>
       </div>
 
       <div className="bg-white border border-[#D0D5CB] rounded-[32px] overflow-hidden shadow-sm">
@@ -88,7 +97,7 @@ export default function ReportsContent({ reports }: ReportsContentProps) {
                     {row.title}
                   </td>
                   <td className="px-8 py-6 opacity-60">
-                    {formatDateLabel(row.timestamp)}
+                    {formatDateLabel(row.createdAt)}
                   </td>
                   <td className="px-8 py-6">
                     <span

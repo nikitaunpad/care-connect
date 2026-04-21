@@ -1,3 +1,4 @@
+import { PaymentStatus } from '@/generated/prisma/enums';
 import { auth } from '@/lib/auth/auth';
 import { prisma } from '@/lib/prisma';
 import { headers } from 'next/headers';
@@ -43,22 +44,31 @@ export default async function DashboardPage() {
     }),
     prisma.report.findMany({
       where: { userId: session.user.id },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { createdAt: 'desc' },
       take: 10,
       select: {
         id: true,
         title: true,
         status: true,
-        timestamp: true,
+        createdAt: true,
       },
     }),
     prisma.donation.findMany({
-      where: { userId: session.user.id },
+      where: {
+        report: {
+          userId: session.user.id,
+        },
+        paymentStatus: PaymentStatus.PAID,
+      },
       select: {
         amount: true,
       },
     }),
   ]);
+
+  const serializedDonations = donations.map((item) => ({
+    amount: Number(item.amount),
+  }));
 
   const pendingReportsCount = reports.filter(
     (item) => item.status === 'PENDING',
@@ -77,7 +87,7 @@ export default async function DashboardPage() {
       <DashboardContent
         consultations={consultations}
         reports={reports}
-        donations={donations}
+        donations={serializedDonations}
         displayName={displayName}
         pendingReportsCount={pendingReportsCount}
       />

@@ -1,15 +1,55 @@
 'use client';
 
+import { Alert } from '@/components/alert';
+import { Header } from '@/components/header';
+import { authClient } from '@/lib/auth/auth-client';
+import type { ConsultationScheduleSlot } from '@/modules/consultation/consultation.types';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+
+// Get today's date in WIB timezone (UTC+7)
+const getTodayWIB = (): string => {
+  const now = new Date();
+  const wibOffset = 7 * 60; // WIB is UTC+7
+  const wibDate = new Date(now.getTime() + wibOffset * 60 * 1000);
+
+  const year = wibDate.getUTCFullYear();
+  const month = String(wibDate.getUTCMonth() + 1).padStart(2, '0');
+  const date = String(wibDate.getUTCDate()).padStart(2, '0');
+
+  return `${year}-${month}-${date}`;
+};
 
 export default function ConsultationPage() {
   const router = useRouter();
+  const [isLogoutAlertOpen, setIsLogoutAlertOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    await authClient.signOut();
+    router.replace('/login');
+    router.refresh();
+  };
+
+  const formRef = React.useRef<HTMLFormElement>(null);
+  const [step, setStep] = useState<'form' | 'review'>('form');
+  const [reviewData, setReviewData] = useState<{
+    title: string | null;
+    nature: string | null;
+    details: string | null;
+    urgency: string | null;
+    date: string | null;
+    time: string | null;
+    fileName: string | null;
+  } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+  const [timeSlots, setTimeSlots] = useState<ConsultationScheduleSlot[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [file, setFile] = useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -17,27 +57,58 @@ export default function ConsultationPage() {
     if (!selected) return;
 
     const maxSize = 10 * 1024 * 1024;
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
 
     if (selected.size > maxSize) {
-      alert('File max 10MB');
+      alert('File size must be less than 10MB');
+      return;
+    }
+
+    if (!allowedTypes.includes(selected.type)) {
+      alert('Only PDF, JPG, and PNG files are allowed');
       return;
     }
 
     setFile(selected);
   };
 
-  // Available time slots based on the selected date
-  const timeSlots = [
-    '09:00',
-    '10:00',
-    '11:00',
-    '13:00',
-    '14:00',
-    '15:00',
-    '16:00',
-  ];
+  useEffect(() => {
+    if (!selectedDate) {
+      setTimeSlots([]);
+      return;
+    }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    const controller = new AbortController();
+    const fetchSlots = async () => {
+      setIsLoadingSlots(true);
+      try {
+        const response = await fetch(`/api/consultation?date=${selectedDate}`, {
+          signal: controller.signal,
+        });
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          setTimeSlots([]);
+          return;
+        }
+
+        setTimeSlots(result.data ?? []);
+      } catch (error) {
+        if ((error as Error)?.name !== 'AbortError') {
+          console.error('Failed to load time slots:', error);
+          setTimeSlots([]);
+        }
+      } finally {
+        setIsLoadingSlots(false);
+      }
+    };
+
+    fetchSlots();
+
+    return () => controller.abort();
+  }, [selectedDate]);
+
+  function handleReviewTrigger(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
 
@@ -49,11 +120,27 @@ export default function ConsultationPage() {
       return;
     }
 
+    const data = new FormData(form);
+
+    setReviewData({
+      title: data.get('title') as string | null,
+      nature: data.get('nature') as string | null,
+      details: data.get('details') as string | null,
+      urgency: data.get('urgency') as string | null,
+      date: selectedDate,
+      time: selectedTime,
+      fileName: file ? file.name : 'No file chosen',
+    });
+    setStep('review');
+  }
+
+  async function submitAfterReview() {
+    if (!formRef.current) return;
+
     setIsSubmitting(true);
     setMessage({ type: '', text: '' });
 
-    const formData = new FormData(form);
-
+    const formData = new FormData(formRef.current);
     formData.append('date', selectedDate);
     formData.append('time', selectedTime);
 
@@ -76,20 +163,22 @@ export default function ConsultationPage() {
           type: 'error',
           text: result.error || 'Failed to request consultation.',
         });
+        setStep('form');
         return;
       }
 
       setMessage({
         type: 'success',
-        text: 'Consultation requested successfully. Redirecting to dashboard...',
+        text: 'Consultation registered successfully. Redirecting to dashboard...',
       });
+      setIsSubmitting(false);
 
-      form.reset();
+      formRef.current?.reset();
       setSelectedDate('');
       setSelectedTime('');
       setFile(null);
 
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       router.replace('/dashboard');
       setTimeout(() => {
         if (window.location.pathname === '/consultation') {
@@ -102,71 +191,75 @@ export default function ConsultationPage() {
         type: 'error',
         text: 'Failed to submit request. Please try again.',
       });
-    } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F7F3ED] text-[#193C1F] font-sans">
-      {/* Header */}
-      <header className="w-full h-20 px-12 flex items-center justify-between bg-white border-b border-[#D0D5CB]">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#193C1F] rounded flex items-center justify-center">
-            <svg
-              className="h-5 w-5 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              ></path>
-            </svg>
-          </div>
-          <span className="text-2xl font-bold text-[#193C1F]">CareConnect</span>
+    <div className="min-h-screen flex flex-col bg-[#F7F3ED] text-[#193C1F] font-sans relative">
+      {/* Loading & Success Overlay */}
+      {(isSubmitting || message.type === 'success') && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm transition-all duration-300">
+          {message.type === 'success' ? (
+            <div className="bg-white p-10 rounded-2xl shadow-xl flex flex-col items-center gap-4 text-center max-w-sm w-full mx-4 transform transition-all scale-100">
+              <div className="w-20 h-20 bg-[#8EA087]/10 rounded-full flex items-center justify-center mb-2">
+                <svg
+                  className="h-10 w-10 text-[#8EA087]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M5 13l4 4L19 7"
+                  ></path>
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-[#193C1F]">Success!</h3>
+              <p className="text-[#193C1F]/70">{message.text}</p>
+            </div>
+          ) : (
+            <div className="bg-white p-10 rounded-2xl shadow-xl flex flex-col items-center gap-6 text-center max-w-sm w-full mx-4">
+              <svg
+                className="animate-spin h-12 w-12 text-[#8EA087]"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              <div>
+                <h3 className="text-xl font-bold text-[#193C1F] mb-1">
+                  Processing request...
+                </h3>
+                <p className="text-sm text-[#193C1F]/60">
+                  Please wait while we secure your slot.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
-        <nav className="flex items-center gap-8">
-          <Link
-            href="/landingPage"
-            className="text-[#193C1F] font-medium hover:text-[#8EA087]"
-          >
-            Home
-          </Link>
-          <Link
-            href="#"
-            className="text-[#193C1F] font-medium hover:text-[#8EA087]"
-          >
-            Resources
-          </Link>
-          <Link
-            href="#"
-            className="text-[#193C1F] font-medium hover:text-[#8EA087]"
-          >
-            Support
-          </Link>
-          <button className="w-10 h-10 rounded-lg bg-[#F7F3ED] flex items-center justify-center text-[#193C1F] border border-[#D0D5CB]">
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              ></path>
-            </svg>
-          </button>
-        </nav>
-      </header>
+      )}
+
+      {/* Header */}
+      <Header
+        withSearch={false}
+        withLogo={true}
+        onLogoutClick={() => setIsLogoutAlertOpen(true)}
+      />
 
       {/* Main Content */}
       <main className="flex-grow flex items-center justify-center py-16 px-4">
@@ -199,45 +292,33 @@ export default function ConsultationPage() {
           </div>
 
           {/* Status Message */}
-          {message.text && (
+          {message.text && message.type === 'error' && (
             <div
-              className={`mb-6 p-4 rounded-xl border flex items-center gap-3 ${message.type === 'success' ? 'bg-[#8EA087]/10 text-[#193C1F] border-[#8EA087]/30' : 'bg-red-50 text-red-700 border-red-200'}`}
+              className={`mb-6 p-4 rounded-xl border flex items-center gap-3 bg-red-50 text-red-700 border-red-200`}
             >
-              {message.type === 'success' ? (
-                <svg
-                  className="h-5 w-5 text-[#8EA087]"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  ></path>
-                </svg>
-              ) : (
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  ></path>
-                </svg>
-              )}
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
               <span className="font-medium">{message.text}</span>
             </div>
           )}
 
           {/* Consultation Form Fields */}
-          <form className="space-y-8" onSubmit={handleSubmit}>
+          <form
+            ref={formRef}
+            className={step === 'review' ? 'hidden' : 'space-y-8'}
+            onSubmit={handleReviewTrigger}
+          >
             <div>
               <label
                 className="block text-sm font-semibold text-[#193C1F] mb-2"
@@ -299,7 +380,7 @@ export default function ConsultationPage() {
                   type="date"
                   id="consultation-date"
                   className="w-full px-4 py-4 rounded-xl border border-[#D0D5CB] bg-white text-[#193C1F] focus:ring-[#8EA087] focus:border-[#8EA087] min-h-[58px]"
-                  min={new Date().toISOString().split('T')[0]} // Prevents picking past dates
+                  min={getTodayWIB()}
                   value={selectedDate}
                   onChange={(e) => {
                     setSelectedDate(e.target.value);
@@ -318,20 +399,31 @@ export default function ConsultationPage() {
                   <div className="w-full h-[58px] px-4 rounded-xl border border-[#D0D5CB] border-dashed bg-[#F7F3ED] text-[#193C1F]/40 flex items-center justify-center text-sm">
                     Select a date to view available times
                   </div>
+                ) : isLoadingSlots ? (
+                  <div className="w-full h-[58px] px-4 rounded-xl border border-[#D0D5CB] bg-[#F7F3ED] text-[#193C1F]/70 flex items-center justify-center text-sm">
+                    Loading available slots...
+                  </div>
+                ) : timeSlots.length === 0 ? (
+                  <div className="w-full h-[58px] px-4 rounded-xl border border-[#D0D5CB] bg-[#F7F3ED] text-[#193C1F]/70 flex items-center justify-center text-sm">
+                    No available slots for this date.
+                  </div>
                 ) : (
                   <div className="grid grid-cols-3 gap-2">
-                    {timeSlots.map((time) => (
+                    {timeSlots.map((slot) => (
                       <button
-                        key={time}
+                        key={slot.time}
                         type="button"
-                        onClick={() => setSelectedTime(time)}
+                        onClick={() => setSelectedTime(slot.time)}
+                        disabled={!slot.available}
                         className={`py-2 px-1 rounded-lg border text-sm font-medium transition-colors ${
-                          selectedTime === time
-                            ? 'bg-[#8EA087] border-[#8EA087] text-[#F7F3ED] shadow-sm'
-                            : 'bg-white border-[#D0D5CB] text-[#193C1F] hover:border-[#8EA087] hover:bg-[#F7F3ED]'
+                          !slot.available
+                            ? 'bg-[#F3F4F6] border-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
+                            : selectedTime === slot.time
+                              ? 'bg-[#8EA087] border-[#8EA087] text-[#F7F3ED] shadow-sm'
+                              : 'bg-white border-[#D0D5CB] text-[#193C1F] hover:border-[#8EA087] hover:bg-[#F7F3ED]'
                         }`}
                       >
-                        {time}
+                        {slot.time}
                       </button>
                     ))}
                   </div>
@@ -384,6 +476,9 @@ export default function ConsultationPage() {
                 </svg>
                 <p className="text-[#193C1F] font-medium">
                   Click to upload or drag and drop
+                </p>
+                <p className="text-xs text-[#193C1F]/60 mt-1">
+                  Supported formats: PDF, JPG, PNG (max 10MB)
                 </p>
               </div>
             </div>
@@ -498,6 +593,96 @@ export default function ConsultationPage() {
               </p>
             </div>
           </form>
+
+          {/* Review Section */}
+          {step === 'review' && reviewData && (
+            <div className="space-y-8">
+              <div className="bg-[#F7F3ED] p-8 rounded-xl border border-[#D0D5CB]">
+                <h3 className="text-xl font-bold text-[#193C1F] mb-6">
+                  Review Your Request
+                </h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-semibold text-[#193C1F]/60">
+                      Title
+                    </p>
+                    <p className="text-base text-[#193C1F]">
+                      {reviewData.title}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#193C1F]/60">
+                      Nature of Consultation
+                    </p>
+                    <p className="text-base text-[#193C1F]">
+                      {reviewData.nature}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#193C1F]/60">
+                      Details
+                    </p>
+                    <p className="text-base text-[#193C1F] whitespace-pre-wrap">
+                      {reviewData.details}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-[#193C1F]/60">
+                        Date
+                      </p>
+                      <p className="text-base text-[#193C1F]">
+                        {reviewData.date}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-[#193C1F]/60">
+                        Time
+                      </p>
+                      <p className="text-base text-[#193C1F]">
+                        {reviewData.time}
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#193C1F]/60">
+                      Urgency
+                    </p>
+                    <p className="text-base text-[#193C1F] capitalize">
+                      {reviewData.urgency}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#193C1F]/60">
+                      Attached File
+                    </p>
+                    <p className="text-base text-[#193C1F]">
+                      {reviewData.fileName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setStep('form')}
+                  className="flex-1 px-8 py-4 rounded-xl font-bold text-[#193C1F] bg-[#F7F3ED] border border-[#D0D5CB] hover:bg-[#EBE6DE] transition-colors"
+                >
+                  Back to Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={submitAfterReview}
+                  disabled={isSubmitting}
+                  className="flex-1 px-8 py-4 rounded-xl font-bold text-[#F7F3ED] bg-[#193C1F] hover:bg-[#2d5a35] transition-colors shadow-lg shadow-[#193C1F]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  Confirm & Submit
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
@@ -529,6 +714,16 @@ export default function ConsultationPage() {
           </p>
         </div>
       </footer>
+
+      <Alert
+        isOpen={isLogoutAlertOpen}
+        onClose={() => setIsLogoutAlertOpen(false)}
+        onConfirm={handleLogout}
+        type="danger"
+        title="End Session?"
+        description="Are you sure you want to log out?"
+        confirmText={isLoggingOut ? 'Logging out...' : 'Log Out'}
+      />
     </div>
   );
 }
