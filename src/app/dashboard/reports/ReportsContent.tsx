@@ -1,8 +1,9 @@
 'use client';
 
+import { Pagination } from '@/components/pagination';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type ReportItem = {
   id: number;
@@ -87,12 +88,32 @@ export default function ReportsContent({ reports }: ReportsContentProps) {
   const query = searchParams.get('search')?.toLowerCase() || '';
   const [hoveredRowId, setHoveredRowId] = useState<number | null>(null);
 
-  const filteredData = reports.filter(
-    (item) =>
-      String(item.id).toLowerCase().includes(query) ||
-      item.title.toLowerCase().includes(query) ||
-      item.status.toLowerCase().includes(query),
-  );
+  // --- LOGIKA PAGINATION ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Filter data berdasarkan query search
+  const filteredData = useMemo(() => {
+    return reports.filter(
+      (item) =>
+        String(item.id).toLowerCase().includes(query) ||
+        item.title.toLowerCase().includes(query) ||
+        item.status.toLowerCase().includes(query),
+    );
+  }, [reports, query]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCurrentPage(1);
+  }, [query]);
+
+  // Hitung data yang tampil di halaman saat ini
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const currentItems = useMemo(() => {
+    const lastIndex = currentPage * itemsPerPage;
+    const firstIndex = lastIndex - itemsPerPage;
+    return filteredData.slice(firstIndex, lastIndex);
+  }, [filteredData, currentPage]);
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -123,8 +144,8 @@ export default function ReportsContent({ reports }: ReportsContentProps) {
               <th className="px-8 py-5">Status</th>
             </tr>
           </thead>
-          {filteredData.length > 0 ? (
-            filteredData.map((row) => (
+          {currentItems.length > 0 ? (
+            currentItems.map((row) => (
               <tbody
                 key={row.id}
                 onMouseEnter={() => setHoveredRowId(row.id)}
@@ -206,7 +227,6 @@ export default function ReportsContent({ reports }: ReportsContentProps) {
                                 </div>
                               </div>
                             </div>
-
                             {/* Right Side: Description & Evidences */}
                             <div className="flex flex-col border-l border-[#F7F3ED] pl-10">
                               <h4 className="text-[11px] font-black uppercase tracking-wider text-[#8EA087] mb-4">
@@ -218,7 +238,6 @@ export default function ReportsContent({ reports }: ReportsContentProps) {
                                     'No description provided.'}
                                 </p>
                               </div>
-
                               {row.evidences.length > 0 && (
                                 <div className="mt-6 space-y-3">
                                   <p className="text-[10px] text-[#8EA087] font-bold uppercase tracking-tight">
@@ -271,6 +290,16 @@ export default function ReportsContent({ reports }: ReportsContentProps) {
           )}
         </table>
       </div>
+
+      {/* RENDER KOMPONEN PAGINATION DI SINI */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => {
+          setCurrentPage(page);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
     </div>
   );
 }

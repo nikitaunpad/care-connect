@@ -86,6 +86,8 @@ type DashboardContentProps = {
   donations: Array<{ amount: number }>;
   displayName: string;
   pendingReportsCount: number;
+  totalConsultationsCount: number;
+  totalReportsCount: number;
 };
 
 const formatRupiah = (value: number) =>
@@ -106,7 +108,6 @@ const normalizeSearchValue = (value: unknown): string => {
   if (typeof value === 'string') {
     return value.toLowerCase();
   }
-
   return '';
 };
 
@@ -116,17 +117,19 @@ export default function DashboardContent({
   donations,
   displayName,
   pendingReportsCount,
+  // 1. AMBIL PROPS INI DARI PARENT (page.tsx)
+  totalConsultationsCount,
+  totalReportsCount,
 }: DashboardContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchBarQuery = searchParams.get('search')?.toLowerCase() || '';
 
+  // --- LOGIKA LAMA YANG SALAH SUDAH DIHAPUS (consultations.length) ---
+
   const recentConsultations: RecentConsultation[] = consultations
     .filter((item) => {
-      if (!searchBarQuery) {
-        return true;
-      }
-
+      if (!searchBarQuery) return true;
       return [item.psychologist?.name, item.title, item.category, item.status]
         .map(normalizeSearchValue)
         .some((value) => value.includes(searchBarQuery));
@@ -140,10 +143,7 @@ export default function DashboardContent({
 
   const filteredReports: ReportItem[] = reports
     .filter((item) => {
-      if (!searchBarQuery) {
-        return true;
-      }
-
+      if (!searchBarQuery) return true;
       return [String(item.id), item.title, item.status]
         .map(normalizeSearchValue)
         .some((value) => value.includes(searchBarQuery));
@@ -176,18 +176,21 @@ export default function DashboardContent({
         </div>
         <div className="flex gap-4">
           <button
+            suppressHydrationWarning
             onClick={() => router.push('/consultation')}
             className="px-7 py-3.5 bg-[#8EA087] hover:bg-[#193C1F] text-white rounded-2xl font-bold text-[14px] transition-all shadow-lg"
           >
             + New Consultation
           </button>
           <button
+            suppressHydrationWarning
             onClick={() => router.push('/report')}
             className="px-7 py-3.5 bg-white border-2 border-[#D0D5CB] text-[#193C1F] rounded-2xl font-bold text-[14px] transition-all shadow-lg hover:bg-[#EBE6DE]"
           >
             + New Report
           </button>
           <button
+            suppressHydrationWarning
             onClick={() => router.push('/donation')}
             className="px-7 py-3.5 bg-white border-2 border-[#D0D5CB] text-[#193C1F] rounded-2xl font-bold text-[14px] transition-all shadow-lg hover:bg-[#EBE6DE]"
           >
@@ -200,12 +203,14 @@ export default function DashboardContent({
         {[
           {
             label: 'Total Consultations',
-            val: consultations.length.toString(),
+            // 2. PAKAI NILAI ASLI DARI SERVER
+            val: totalConsultationsCount.toString(),
             icon: <ConsultationIcon />,
           },
           {
             label: 'Reports Filed',
-            val: reports.length.toString(),
+            // 2. PAKAI NILAI ASLI DARI SERVER
+            val: totalReportsCount.toString(),
             icon: <ReportsIcon />,
           },
           {
@@ -296,7 +301,7 @@ export default function DashboardContent({
             <thead className="bg-[#F7F3ED] text-[11px] text-[#8EA087] font-black uppercase tracking-widest">
               <tr>
                 <th className="px-8 py-4">Report ID</th>
-                <th className="px-8 py-4">Type</th>
+                <th className="px-1 py-4">Type</th>
                 <th className="px-8 py-4">Status</th>
               </tr>
             </thead>
@@ -307,7 +312,7 @@ export default function DashboardContent({
                   className="border-b border-[#F7F3ED] hover:bg-[#FDFCFB]"
                 >
                   <td className="px-8 py-5 font-bold">{row.id}</td>
-                  <td className="px-8 py-5 opacity-70">{row.type}</td>
+                  <td className="px-1 py-5 opacity-70">{row.type}</td>
                   <td className="px-8 py-5">
                     <span
                       className={`px-4 py-1.5 rounded-full text-[10px] font-black ${row.status === 'PENDING' ? 'bg-[#D1B698]/30 text-[#D1B698]' : 'bg-[#EBE6DE] text-[#193C1F]'}`}

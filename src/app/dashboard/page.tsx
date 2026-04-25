@@ -24,47 +24,51 @@ export default async function DashboardPage() {
     },
   });
 
-  const [consultations, reports, donations] = await Promise.all([
-    prisma.consultation.findMany({
-      where: { userId: session.user.id },
-      orderBy: { id: 'desc' },
-      take: 10,
-      select: {
-        id: true,
-        title: true,
-        category: true,
-        date: true,
-        status: true,
-        psychologist: {
-          select: {
-            name: true,
+  const [consultations, reports, donations, totalConsCount, totalRepCount] =
+    await Promise.all([
+      prisma.consultation.findMany({
+        where: { userId: session.user.id },
+        orderBy: { id: 'desc' },
+        take: 10,
+        select: {
+          id: true,
+          title: true,
+          category: true,
+          date: true,
+          status: true,
+          psychologist: {
+            select: {
+              name: true,
+            },
           },
         },
-      },
-    }),
-    prisma.report.findMany({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-      select: {
-        id: true,
-        title: true,
-        status: true,
-        createdAt: true,
-      },
-    }),
-    prisma.donation.findMany({
-      where: {
-        report: {
-          userId: session.user.id,
+      }),
+      prisma.report.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          createdAt: true,
         },
-        paymentStatus: PaymentStatus.PAID,
-      },
-      select: {
-        amount: true,
-      },
-    }),
-  ]);
+      }),
+      prisma.donation.findMany({
+        where: {
+          report: {
+            userId: session.user.id,
+          },
+          paymentStatus: PaymentStatus.PAID,
+        },
+        select: {
+          amount: true,
+        },
+      }),
+
+      prisma.consultation.count({ where: { userId: session.user.id } }),
+      prisma.report.count({ where: { userId: session.user.id } }),
+    ]);
 
   const serializedDonations = donations.map((item) => ({
     amount: Number(item.amount),
@@ -90,6 +94,8 @@ export default async function DashboardPage() {
         donations={serializedDonations}
         displayName={displayName}
         pendingReportsCount={pendingReportsCount}
+        totalConsultationsCount={totalConsCount}
+        totalReportsCount={totalRepCount}
       />
     </React.Suspense>
   );

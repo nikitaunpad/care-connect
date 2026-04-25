@@ -2,7 +2,6 @@
 
 import { Alert } from '@/components/alert';
 import ReportForm from '@/components/form';
-// Import tipe data dari form.tsx
 import { ReportSubmitData } from '@/components/form';
 import { Header } from '@/components/header';
 import { useRouter } from 'next/navigation';
