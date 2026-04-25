@@ -528,6 +528,7 @@ export default function ReportForm({
             ← Back to Edit
           </button>
           <Button
+            suppressHydrationWarning
             onClick={handleAction}
             className={`px-12 py-5 rounded-[20px] text-[13px] font-bold shadow-md transition-all active:scale-95 ${getButtonStyles()}`}
           >

@@ -1,8 +1,9 @@
 'use client';
 
+import { Pagination } from '@/components/pagination';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 type ConsultationItem = {
   id: number;
@@ -21,7 +22,6 @@ type ConsultationsContentProps = {
   consultations: ConsultationItem[];
 };
 
-// Ikon Chat Kustom
 const ChatIcon = () => (
   <svg
     width="18"
@@ -42,12 +42,12 @@ const formatDateTimeLabel = (dateValue: Date, timeValue: Date) => {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  }).format(dateValue);
+  }).format(new Date(dateValue));
 
   const timeLabel = new Intl.DateTimeFormat('id-ID', {
     hour: '2-digit',
     minute: '2-digit',
-  }).format(timeValue);
+  }).format(new Date(timeValue));
 
   return `${dateLabel} • ${timeLabel}`;
 };
@@ -75,13 +75,33 @@ export default function ConsultationsContent({
   const query = searchParams.get('search')?.toLowerCase() || '';
   const [hoveredRowId, setHoveredRowId] = useState<number | null>(null);
 
-  const filteredData = consultations.filter(
-    (item) =>
-      (item.psychologist?.name ?? '').toLowerCase().includes(query) ||
-      item.title.toLowerCase().includes(query) ||
-      item.category.toLowerCase().includes(query) ||
-      item.status.toLowerCase().includes(query),
-  );
+  // --- LOGIKA PAGINATION ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Memfilter data berdasarkan query pencarian
+  const filteredData = useMemo(() => {
+    return consultations.filter(
+      (item) =>
+        (item.psychologist?.name ?? '').toLowerCase().includes(query) ||
+        item.title.toLowerCase().includes(query) ||
+        item.category.toLowerCase().includes(query) ||
+        item.status.toLowerCase().includes(query),
+    );
+  }, [consultations, query]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCurrentPage(1);
+  }, [query]);
+
+  // Menghitung total halaman dan memotong data untuk halaman aktif
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const currentItems = useMemo(() => {
+    const lastIndex = currentPage * itemsPerPage;
+    const firstIndex = lastIndex - itemsPerPage;
+    return filteredData.slice(firstIndex, lastIndex);
+  }, [filteredData, currentPage]);
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -90,7 +110,7 @@ export default function ConsultationsContent({
           <h2 className="text-[32px] font-black text-[#193C1F]">
             My Consultations
           </h2>
-          <p className="text-[#8EA087] font-medium">
+          <p className="text-[#8EA087] font-medium italic">
             {query
               ? `Showing results for "${query}"`
               : 'View and manage your consultation history.'}
@@ -105,7 +125,7 @@ export default function ConsultationsContent({
       </div>
 
       <div className="bg-white border border-[#D0D5CB] rounded-[32px] overflow-hidden shadow-sm">
-        <table className="w-full text-left">
+        <table className="w-full text-left border-collapse">
           <thead className="bg-[#F7F3ED] text-[11px] text-[#8EA087] font-black uppercase tracking-widest">
             <tr>
               <th className="px-8 py-5">Doctor & Specialist</th>
@@ -114,8 +134,8 @@ export default function ConsultationsContent({
               <th className="px-8 py-5 text-right">Action</th>
             </tr>
           </thead>
-          {filteredData.length > 0 ? (
-            filteredData.map((row) => (
+          {currentItems.length > 0 ? (
+            currentItems.map((row) => (
               <tbody
                 key={row.id}
                 onMouseEnter={() => setHoveredRowId(row.id)}
@@ -143,7 +163,7 @@ export default function ConsultationsContent({
                       {row.title} • {row.category}
                     </p>
                   </td>
-                  <td className="px-8 py-6 font-bold">
+                  <td className="px-8 py-6 font-bold text-[#193C1F]">
                     {formatDateTimeLabel(row.date, row.time)}
                   </td>
                   <td className="px-8 py-6">
@@ -173,7 +193,8 @@ export default function ConsultationsContent({
                     </div>
                   </td>
                 </tr>
-                {/* Detail Dropdown Row */}
+
+                {/* Detail Dropdown Row (Accordion) */}
                 <tr>
                   <td colSpan={4} className="p-0">
                     <div
@@ -184,16 +205,15 @@ export default function ConsultationsContent({
                       <div className="px-8 pb-8 pt-2">
                         <div className="p-7 bg-white border border-[#D0D5CB]/40 rounded-[24px] shadow-sm">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                            {/* Left Side: Summary / Form Fields */}
                             <div className="space-y-6">
                               <div>
                                 <h4 className="text-[11px] font-black uppercase tracking-wider text-[#8EA087] mb-4">
-                                  Consultation Details (Form Summary)
+                                  Consultation Summary
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                   <div className="space-y-1">
                                     <p className="text-[10px] text-[#8EA087] font-bold uppercase tracking-tight">
-                                      Inquiry Title
+                                      Title
                                     </p>
                                     <p className="text-[14px] font-bold text-[#193C1F]">
                                       {row.title}
@@ -209,91 +229,49 @@ export default function ConsultationsContent({
                                   </div>
                                   <div className="space-y-1">
                                     <p className="text-[10px] text-[#8EA087] font-bold uppercase tracking-tight">
-                                      Date
-                                    </p>
-                                    <p className="text-[14px] font-bold text-[#193C1F]">
-                                      {new Intl.DateTimeFormat('id-ID', {
-                                        day: '2-digit',
-                                        month: 'long',
-                                        year: 'numeric',
-                                      }).format(new Date(row.date))}
-                                    </p>
-                                  </div>
-                                  <div className="space-y-1">
-                                    <p className="text-[10px] text-[#8EA087] font-bold uppercase tracking-tight">
-                                      Time Slot
-                                    </p>
-                                    <p className="text-[14px] font-bold text-[#193C1F]">
-                                      {new Intl.DateTimeFormat('id-ID', {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                      }).format(new Date(row.time))}{' '}
-                                      WIB
-                                    </p>
-                                  </div>
-                                  <div className="space-y-1">
-                                    <p className="text-[10px] text-[#8EA087] font-bold uppercase tracking-tight">
                                       Assigned Psychologist
                                     </p>
                                     <p className="text-[14px] font-bold text-[#193C1F]">
                                       {row.psychologist?.name ??
-                                        'Not assigned yet'}
+                                        'Processing...'}
                                     </p>
                                   </div>
                                   <div className="space-y-1">
                                     <p className="text-[10px] text-[#8EA087] font-bold uppercase tracking-tight">
-                                      Submission Type
+                                      Identity
                                     </p>
                                     <p className="text-[14px] font-bold text-[#193C1F]">
-                                      {row.isAnonymous
-                                        ? 'Anonymous'
-                                        : 'Public/Named'}
+                                      {row.isAnonymous ? 'Anonymous' : 'Public'}
                                     </p>
                                   </div>
                                 </div>
                               </div>
                             </div>
 
-                            {/* Right Side: Description & Files */}
                             <div className="flex flex-col border-l border-[#F7F3ED] pl-10">
                               <h4 className="text-[11px] font-black uppercase tracking-wider text-[#8EA087] mb-4">
                                 Description & Documents
                               </h4>
-                              <div className="bg-[#F7F3ED]/30 p-5 rounded-2xl border border-[#F7F3ED] max-h-[300px] overflow-y-auto custom-scrollbar">
-                                <p className="text-[14px] leading-relaxed text-[#193C1F]/80 whitespace-pre-wrap">
+                              <div className="bg-[#F7F3ED]/30 p-5 rounded-2xl border border-[#F7F3ED] max-h-[200px] overflow-y-auto custom-scrollbar font-medium">
+                                <p className="text-[13px] leading-relaxed text-[#193C1F]/80 whitespace-pre-wrap italic">
+                                  &quot;
                                   {row.description ||
                                     'No description provided.'}
+                                  &quot;
                                 </p>
                               </div>
-
                               {row.attachmentUrl && (
-                                <div className="mt-6 flex items-center justify-between p-4 bg-[#F7F3ED] rounded-xl border border-[#D0D5CB]/30">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[#8EA087]">
-                                      <svg
-                                        width="14"
-                                        height="14"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2.5"
-                                      >
-                                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
-                                        <polyline points="13 2 13 9 20 9" />
-                                      </svg>
-                                    </div>
-                                    <p className="text-[12px] font-bold text-[#193C1F]">
-                                      Attached Document
-                                    </p>
-                                  </div>
-                                  <a
+                                <div className="mt-6 flex items-center justify-between p-3 bg-[#F7F3ED] rounded-xl border border-[#D0D5CB]/30">
+                                  <span className="text-[12px] font-bold text-[#193C1F] truncate max-w-[150px]">
+                                    Attached Document
+                                  </span>
+                                  <Link
                                     href={row.attachmentUrl}
                                     target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="px-4 py-1.5 bg-[#193C1F] text-white text-[11px] font-black rounded-lg uppercase tracking-wider hover:bg-[#122d17] transition-colors"
+                                    className="text-[10px] font-black text-[#8EA087] uppercase hover:text-[#193C1F]"
                                   >
                                     View
-                                  </a>
+                                  </Link>
                                 </div>
                               )}
                             </div>
@@ -319,6 +297,16 @@ export default function ConsultationsContent({
           )}
         </table>
       </div>
+
+      {/* Komponen Pagination */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page: number) => {
+          setCurrentPage(page);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
     </div>
   );
 }

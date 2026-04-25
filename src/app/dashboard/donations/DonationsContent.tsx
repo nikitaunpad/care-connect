@@ -1,5 +1,6 @@
 'use client';
 
+import { Pagination } from '@/components/pagination';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -224,11 +225,21 @@ export default function DonationsContent({ donations }: DonationsContentProps) {
   const orderId = searchParams.get('orderId') || searchParams.get('order_id');
   const transactionStatus = searchParams.get('transaction_status');
   const [hoveredRowId, setHoveredRowId] = useState<number | null>(null);
+
+  // --- PAGINATION LOGIC START ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query]);
+  // --- PAGINATION LOGIC END ---
+
   const initialNotice = useMemo<PaymentNoticeState | null>(
     () =>
       mapTransactionStatusToNotice(transactionStatus) ||
       (payment === 'success' || payment === 'pending' || payment === 'error'
-        ? payment
+        ? (payment as PaymentNoticeState)
         : null),
     [payment, transactionStatus],
   );
@@ -314,7 +325,6 @@ export default function DonationsContent({ donations }: DonationsContentProps) {
         return;
       }
 
-      // Replace URL so status notification does not reappear on page refresh.
       timeout = setTimeout(() => {
         router.replace(nextUrl);
       }, 2500);
@@ -335,6 +345,13 @@ export default function DonationsContent({ donations }: DonationsContentProps) {
       item.report.title.toLowerCase().includes(query) ||
       item.paymentMethod.toLowerCase().includes(query) ||
       item.paymentStatus.toLowerCase().includes(query),
+  );
+
+  // --- SLICE DATA FOR PAGINATION ---
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const currentItems = filteredData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
   );
 
   return (
@@ -380,8 +397,8 @@ export default function DonationsContent({ donations }: DonationsContentProps) {
               <th className="px-8 py-5 text-right">Amount</th>
             </tr>
           </thead>
-          {filteredData.length > 0 ? (
-            filteredData.map((row) => (
+          {currentItems.length > 0 ? (
+            currentItems.map((row) => (
               <tbody
                 key={row.id}
                 onMouseEnter={() => setHoveredRowId(row.id)}
@@ -499,8 +516,8 @@ export default function DonationsContent({ donations }: DonationsContentProps) {
                                         Report Description
                                       </p>
                                       <div className="bg-[#F7F3ED]/30 p-4 rounded-xl border border-[#F7F3ED] max-h-[150px] overflow-y-auto custom-scrollbar">
-                                        <p className="text-[13px] leading-relaxed text-[#193C1F]/80 whitespace-pre-wrap">
-                                          {row.report.description}
+                                        <p className="text-[13px] leading-relaxed text-[#193C1F]/80 whitespace-pre-wrap font-medium italic">
+                                          &quot;{row.report.description}&quot;
                                         </p>
                                       </div>
                                     </div>
@@ -530,6 +547,15 @@ export default function DonationsContent({ donations }: DonationsContentProps) {
           )}
         </table>
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page: number) => {
+          setCurrentPage(page);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
     </div>
   );
 }
