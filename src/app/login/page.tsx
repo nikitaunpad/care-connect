@@ -153,6 +153,7 @@ export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('register');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -161,6 +162,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
@@ -169,19 +171,30 @@ export default function LoginPage() {
           name,
           email,
           password,
+          callbackURL: '/login?verified=1',
         });
         if (signUpError) throw new Error(signUpError.message);
+
+        setSuccess(
+          'Registration successful. Please check your email to verify your account before logging in.',
+        );
+        setActiveTab('login');
+        setPassword('');
+        return;
       } else {
         const { error: signInError } = await authClient.signIn.email({
           email,
           password,
+          callbackURL: '/dashboard',
         });
         if (signInError) throw new Error(signInError.message);
       }
       router.push('/dashboard');
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message);
+        setError(
+          'Your email is not verified yet. Please check your inbox and verify your account first.',
+        );
       } else {
         setError('Authentication failed.');
       }
@@ -237,6 +250,7 @@ export default function LoginPage() {
                   onClick={() => {
                     setActiveTab(tab);
                     setError('');
+                    setSuccess('');
                   }}
                   className={`flex-1 flex justify-center items-center font-bold text-lg transition-all ${
                     activeTab === tab
@@ -297,6 +311,12 @@ export default function LoginPage() {
               {error && (
                 <p className="text-red-500 text-sm text-center font-medium">
                   {error}
+                </p>
+              )}
+
+              {success && (
+                <p className="text-green-600 text-sm text-center font-medium">
+                  {success}
                 </p>
               )}
 
