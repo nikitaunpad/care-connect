@@ -25,6 +25,7 @@ export default async function DonationsPage() {
       report: {
         select: {
           title: true,
+          description: true,
         },
       },
     },

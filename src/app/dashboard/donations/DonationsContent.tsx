@@ -11,6 +11,7 @@ type DonationItem = {
   timestamp: string;
   report: {
     title: string;
+    description: string;
   };
 };
 
@@ -222,6 +223,7 @@ export default function DonationsContent({ donations }: DonationsContentProps) {
   const payment = searchParams.get('payment');
   const orderId = searchParams.get('orderId') || searchParams.get('order_id');
   const transactionStatus = searchParams.get('transaction_status');
+  const [hoveredRowId, setHoveredRowId] = useState<number | null>(null);
   const initialNotice = useMemo<PaymentNoticeState | null>(
     () =>
       mapTransactionStatusToNotice(transactionStatus) ||
@@ -355,7 +357,7 @@ export default function DonationsContent({ donations }: DonationsContentProps) {
           </h2>
           <p className="text-[#8EA087] font-medium">
             {query
-              ? `Showing results for \"${query}\"`
+              ? `Showing results for "${query}"`
               : 'Your contributions to the community.'}
           </p>
         </div>
@@ -378,15 +380,28 @@ export default function DonationsContent({ donations }: DonationsContentProps) {
               <th className="px-8 py-5 text-right">Amount</th>
             </tr>
           </thead>
-          <tbody className="text-[14px] text-[#193C1F]">
-            {filteredData.length > 0 ? (
-              filteredData.map((row) => (
+          {filteredData.length > 0 ? (
+            filteredData.map((row) => (
+              <tbody
+                key={row.id}
+                onMouseEnter={() => setHoveredRowId(row.id)}
+                onMouseLeave={() => setHoveredRowId(null)}
+                className="group border-b border-[#F7F3ED] last:border-0"
+              >
                 <tr
-                  key={row.id}
-                  className="border-b border-[#F7F3ED] hover:bg-[#FDFCFB] transition-colors"
+                  className={`transition-colors cursor-default ${
+                    hoveredRowId === row.id ? 'bg-[#FDFCFB]' : ''
+                  }`}
                 >
-                  <td className="px-8 py-6 font-bold">{row.report.title}</td>
-                  <td className="px-8 py-6 opacity-60">
+                  <td className="px-8 py-6">
+                    <p className="font-bold text-[#193C1F]">
+                      {row.report.title}
+                    </p>
+                    <p className="text-[12px] text-[#8EA087] font-medium opacity-60">
+                      Donation #{row.id}
+                    </p>
+                  </td>
+                  <td className="px-8 py-6 font-medium">
                     {formatDateLabel(row.timestamp)}
                   </td>
                   <td className="px-8 py-6 font-medium italic text-[#8EA087]">
@@ -394,7 +409,9 @@ export default function DonationsContent({ donations }: DonationsContentProps) {
                   </td>
                   <td className="px-8 py-6">
                     <span
-                      className={`px-4 py-1.5 rounded-full text-[10px] font-black ${getPaymentStatusClass(row.paymentStatus)}`}
+                      className={`px-4 py-1.5 rounded-full text-[10px] font-black ${getPaymentStatusClass(
+                        row.paymentStatus,
+                      )}`}
                     >
                       {formatPaymentStatus(row.paymentStatus)}
                     </span>
@@ -403,8 +420,104 @@ export default function DonationsContent({ donations }: DonationsContentProps) {
                     {formatRupiah(row.amount)}
                   </td>
                 </tr>
-              ))
-            ) : (
+                {/* Detail Dropdown Row */}
+                <tr>
+                  <td colSpan={5} className="p-0">
+                    <div
+                      className={`overflow-hidden transition-all duration-500 ease-in-out bg-[#FDFCFB] ${
+                        hoveredRowId === row.id ? 'max-h-[800px]' : 'max-h-0'
+                      }`}
+                    >
+                      <div className="px-8 pb-8 pt-2">
+                        <div className="p-7 bg-white border border-[#D0D5CB]/40 rounded-[24px] shadow-sm">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                            {/* Left Side: Donation Summary */}
+                            <div className="space-y-6">
+                              <div>
+                                <h4 className="text-[11px] font-black uppercase tracking-wider text-[#8EA087] mb-4">
+                                  Donation Summary
+                                </h4>
+                                <div className="grid grid-cols-2 gap-6">
+                                  <div className="space-y-1">
+                                    <p className="text-[10px] text-[#8EA087] font-bold uppercase tracking-tight">
+                                      Amount Contributed
+                                    </p>
+                                    <p className="text-[20px] font-black text-[#D1B698]">
+                                      {formatRupiah(row.amount)}
+                                    </p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-[10px] text-[#8EA087] font-bold uppercase tracking-tight">
+                                      Payment Method
+                                    </p>
+                                    <p className="text-[14px] font-bold text-[#193C1F]">
+                                      {formatPaymentMethod(row.paymentMethod)}
+                                    </p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-[10px] text-[#8EA087] font-bold uppercase tracking-tight">
+                                      Payment Status
+                                    </p>
+                                    <span
+                                      className={`inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase ${getPaymentStatusClass(
+                                        row.paymentStatus,
+                                      )}`}
+                                    >
+                                      {formatPaymentStatus(row.paymentStatus)}
+                                    </span>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-[10px] text-[#8EA087] font-bold uppercase tracking-tight">
+                                      Transaction Date
+                                    </p>
+                                    <p className="text-[14px] font-bold text-[#193C1F]">
+                                      {formatDateLabel(row.timestamp)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Right Side: Target Report */}
+                            <div className="border-l border-[#F7F3ED] pl-10 space-y-6">
+                              <div>
+                                <h4 className="text-[11px] font-black uppercase tracking-wider text-[#8EA087] mb-4">
+                                  Target Report
+                                </h4>
+                                <div className="space-y-4">
+                                  <div className="space-y-1">
+                                    <p className="text-[10px] text-[#8EA087] font-bold uppercase tracking-tight">
+                                      Case Title
+                                    </p>
+                                    <p className="text-[16px] font-bold text-[#193C1F]">
+                                      {row.report.title}
+                                    </p>
+                                  </div>
+                                  {row.report.description && (
+                                    <div className="pt-2">
+                                      <p className="text-[10px] text-[#8EA087] font-bold uppercase tracking-tight mb-1">
+                                        Report Description
+                                      </p>
+                                      <div className="bg-[#F7F3ED]/30 p-4 rounded-xl border border-[#F7F3ED] max-h-[150px] overflow-y-auto custom-scrollbar">
+                                        <p className="text-[13px] leading-relaxed text-[#193C1F]/80 whitespace-pre-wrap">
+                                          {row.report.description}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            ))
+          ) : (
+            <tbody className="text-[14px] text-[#193C1F]">
               <tr>
                 <td
                   colSpan={5}
@@ -413,8 +526,8 @@ export default function DonationsContent({ donations }: DonationsContentProps) {
                   No donations found.
                 </td>
               </tr>
-            )}
-          </tbody>
+            </tbody>
+          )}
         </table>
       </div>
     </div>
