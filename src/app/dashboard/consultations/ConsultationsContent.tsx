@@ -259,7 +259,7 @@ export default function ConsultationsContent({
                               <h4 className="text-[11px] font-black uppercase tracking-wider text-[#8EA087] mb-4">
                                 Description & Documents
                               </h4>
-                              <div className="bg-[#F7F3ED]/30 p-5 rounded-2xl border border-[#F7F3ED]">
+                              <div className="bg-[#F7F3ED]/30 p-5 rounded-2xl border border-[#F7F3ED] max-h-[300px] overflow-y-auto custom-scrollbar">
                                 <p className="text-[14px] leading-relaxed text-[#193C1F]/80 whitespace-pre-wrap">
                                   {row.description ||
                                     'No description provided.'}
