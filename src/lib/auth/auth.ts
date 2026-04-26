@@ -1,4 +1,7 @@
-import { sendVerificationEmail } from '@/lib/email/email';
+import {
+  sendResetPasswordEmail,
+  sendVerificationEmail,
+} from '@/lib/email/email';
 import { prisma } from '@/lib/prisma';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
@@ -41,12 +44,17 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: true,
     autoSignIn: false,
+    sendResetPassword: async ({ user, url }) => {
+      void sendResetPasswordEmail({ user, url });
+    },
   },
   emailVerification: {
     sendOnSignUp: true,
     sendOnSignIn: true,
     expiresIn: 60 * 60,
-    sendVerificationEmail,
+    sendVerificationEmail: async ({ user, url }) => {
+      void sendVerificationEmail({ user, url });
+    },
   },
   socialProviders: {
     google: {

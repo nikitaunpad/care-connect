@@ -7,6 +7,10 @@ const verificationTemplate = readFileSync(
   join(process.cwd(), 'src/lib/email/templates/verification.html'),
   'utf8',
 );
+const resetPasswordTemplate = readFileSync(
+  join(process.cwd(), 'src/lib/email/templates/reset-password.html'),
+  'utf8',
+);
 
 const smtpPort = Number(process.env.SMTP_PORT ?? 587);
 const hasSmtpConfig =
@@ -27,7 +31,7 @@ const transporter = hasSmtpConfig
     })
   : null;
 
-type VerificationEmailInput = {
+type EmailInput = {
   user: {
     email: string;
     name?: string | null;
@@ -57,10 +61,20 @@ function renderVerificationTemplate({
     .replaceAll('{{verification_url}}', escapeHtml(verificationUrl));
 }
 
-export async function sendVerificationEmail({
-  user,
-  url,
-}: VerificationEmailInput) {
+function renderResetPasswordTemplate({
+  userName,
+  resetPasswordUrl,
+}: {
+  userName: string;
+  resetPasswordUrl: string;
+}) {
+  return resetPasswordTemplate
+    .replaceAll('{{app_name}}', escapeHtml(APP_NAME))
+    .replaceAll('{{user_name}}', escapeHtml(userName))
+    .replaceAll('{{reset_url}}', escapeHtml(resetPasswordUrl));
+}
+
+export async function sendVerificationEmail({ user, url }: EmailInput) {
   if (!transporter) {
     console.warn(
       'SMTP is not configured. Verification email was not sent automatically.',
@@ -73,10 +87,29 @@ export async function sendVerificationEmail({
     from: process.env.SMTP_FROM,
     to: user.email,
     subject: 'Verify your CareConnect account',
-    text: `Hi ${user.name ?? 'there'},\n\nWelcome to ${APP_NAME}! Please verify your email by opening this link:\n${url}\n\nThis link will expire in 1 hour.`,
     html: renderVerificationTemplate({
       userName: user.name ?? 'there',
       verificationUrl: url,
+    }),
+  });
+}
+
+export async function sendResetPasswordEmail({ user, url }: EmailInput) {
+  if (!transporter) {
+    console.warn(
+      'SMTP is not configured. Reset Password email was not sent automatically.',
+    );
+    console.info(`Reset Password link for ${user.email}: ${url}`);
+    return;
+  }
+
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to: user.email,
+    subject: 'Reset your CareConnect password',
+    html: renderResetPasswordTemplate({
+      userName: user.name ?? 'there',
+      resetPasswordUrl: url,
     }),
   });
 }
