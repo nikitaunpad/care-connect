@@ -193,9 +193,13 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (err) {
       if (err instanceof Error) {
-        setError(
-          'Your email is not verified yet. Please check your inbox and verify your account first.',
-        );
+        if (err.message === 'Email not verified') {
+          setError(
+            'Your email is not verified yet. Please check your inbox and verify your account first.',
+          );
+        } else {
+          setError(err.message);
+        }
       } else {
         setError('Authentication failed.');
       }
@@ -353,6 +357,7 @@ export default function LoginPage() {
               </Button>
 
               {/* TODO: add Continue with Google button */}
+              {/* NOTE: Use handleGoogleOAuth function! */}
 
               <p className="text-center text-[12px] text-[#193C1F] opacity-60 leading-relaxed mt-4">
                 By {activeTab === 'register' ? 'registering' : 'logging in'},
