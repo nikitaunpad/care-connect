@@ -2,7 +2,7 @@
 
 import { authClient } from '@/lib/auth/auth-client';
 import Link from 'next/link';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense } from 'react';
 
 function PublicHeaderContent() {
@@ -11,7 +11,7 @@ function PublicHeaderContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  
+
   const fromDashboard = searchParams.get('from') === 'dashboard';
 
   // Helper function to check if the path is active
@@ -44,22 +44,31 @@ function PublicHeaderContent() {
         </div>
         <span className="text-2xl font-bold text-[#193C1F]">CareConnect</span>
       </Link>
-      
+
       {fromDashboard ? (
-        <button 
+        <button
           onClick={() => router.back()}
           className="flex items-center gap-2 text-[#193C1F] font-bold hover:text-[#8EA087] transition-colors"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m15 18-6-6 6-6"/>
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m15 18-6-6 6-6" />
           </svg>
           Back to Dashboard
         </button>
       ) : (
         <>
           <nav className="flex items-center gap-12 text-[#193C1F] font-medium hidden md:flex">
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className={`transition-colors ${isActive('/') ? 'text-[#8EA087] font-bold border-b-2 border-[#8EA087] pb-1' : 'hover:text-[#8EA087]'}`}
             >
               Home
@@ -76,7 +85,7 @@ function PublicHeaderContent() {
             >
               Reports
             </Link>
-            <Link 
+            <Link
               href="#"
               onClick={(e) => e.preventDefault()}
               className="transition-colors opacity-50 cursor-not-allowed hover:text-[#8EA087]"
@@ -104,7 +113,11 @@ function PublicHeaderContent() {
 
 export function PublicHeader() {
   return (
-    <Suspense fallback={<header className="sticky top-0 z-[100] h-[92px] w-full bg-[#F7F3ED]/90 border-b border-[#D0D5CB]" />}>
+    <Suspense
+      fallback={
+        <header className="sticky top-0 z-[100] h-[92px] w-full bg-[#F7F3ED]/90 border-b border-[#D0D5CB]" />
+      }
+    >
       <PublicHeaderContent />
     </Suspense>
   );

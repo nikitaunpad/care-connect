@@ -1,10 +1,10 @@
 'use client';
 
 import Carousel from '@/components/carousel';
+import { PublicHeader } from '@/components/public-header';
 import { authClient } from '@/lib/auth/auth-client';
 import Link from 'next/link';
 import React from 'react';
-import { PublicHeader } from '@/components/public-header';
 
 export default function LandingPage() {
   const { data: session } = authClient.useSession();
