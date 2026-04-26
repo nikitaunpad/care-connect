@@ -1,5 +1,6 @@
 'use client';
 
+import Carousel from '@/components/carousel';
 import { authClient } from '@/lib/auth/auth-client';
 import Link from 'next/link';
 import React from 'react';
@@ -25,17 +26,17 @@ export default function LandingPage() {
             healing starts with a single step.
           </p>
           <div className="flex gap-4">
-            <Link href={isLoggedIn ? '/consultation' : '/'}>
+            <Link href={isLoggedIn ? '/consultation' : '/login'}>
               <button className="bg-[#8EA087] text-[#F7F3ED] px-10 py-4 rounded-lg font-bold text-lg shadow-sm hover:bg-[#193C1F] transition-colors h-full">
                 Consult Now
               </button>
             </Link>
-            <Link href={isLoggedIn ? '/report' : '/'}>
+            <Link href={isLoggedIn ? '/report' : '/login'}>
               <button className="bg-[#D0D5CB] text-[#193C1F] px-10 py-4 rounded-lg font-bold text-lg border border-[#8EA087] hover:bg-[#EDE4D8] transition-colors">
                 Report Incident
               </button>
             </Link>
-            <Link href={isLoggedIn ? '/donation' : '/'}>
+            <Link href={isLoggedIn ? '/donation' : '/login'}>
               <button className="bg-[#F7F3ED] text-[#193C1F] px-10 py-4 rounded-lg font-bold text-lg border border-[#D1B698] hover:bg-[#EDE4D8] transition-colors h-full">
                 Donate
               </button>
@@ -43,28 +44,7 @@ export default function LandingPage() {
           </div>
         </div>
         {/* Right side Hero Graphic */}
-        <div className="w-[600px] h-[400px] bg-[#D0D5CB] rounded-3xl flex items-center justify-center text-[#8EA087]">
-          <div className="w-32 h-32">
-            <svg
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              ></path>
-              <path
-                d="M10.5 19.5h3m-6.75-4.5h10.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              ></path>
-            </svg>
-          </div>
-        </div>
+        <Carousel />
       </section>
 
       {/* Stats Section */}
@@ -201,9 +181,9 @@ export default function LandingPage() {
           <h2 className="text-4xl font-black text-[#193C1F]">
             Recent Anonymized Reports
           </h2>
-          <a
+          <Link
             className="text-[#8EA087] font-bold flex items-center gap-2 hover:text-[#193C1F] transition-colors"
-            href="#"
+            href={isLoggedIn ? '/publicreports' : '/login'}
           >
             View Archive
             <svg
@@ -220,7 +200,7 @@ export default function LandingPage() {
                 strokeLinejoin="round"
               ></path>
             </svg>
-          </a>
+          </Link>
         </div>
         <div className="grid grid-cols-3 gap-10">
           <div data-purpose="report-card">
