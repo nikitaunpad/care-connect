@@ -1,7 +1,7 @@
 'use client';
 
 import { Alert } from '@/components/alert';
-import { Header } from '@/components/header';
+import { PublicHeader } from '@/components/public-header';
 import { authClient } from '@/lib/auth/auth-client';
 import type { ConsultationScheduleSlot } from '@/modules/consultation/consultation.types';
 import Link from 'next/link';
@@ -255,11 +255,7 @@ export default function ConsultationPage() {
       )}
 
       {/* Header */}
-      <Header
-        withSearch={false}
-        withLogo={true}
-        onLogoutClick={() => setIsLogoutAlertOpen(true)}
-      />
+      <PublicHeader />
 
       {/* Main Content */}
       <main className="flex-grow flex items-center justify-center py-16 px-4">

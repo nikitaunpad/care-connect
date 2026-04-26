@@ -2,8 +2,9 @@
 
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
-import { Header } from '@/components/header';
+import { PublicHeader } from '@/components/public-header';
 import { Input } from '@/components/input';
+import Link from 'next/link';
 // Import komponen Alert kamu
 import { ArrowRight, Filter, MapPin } from 'lucide-react';
 import React, { useState } from 'react';
@@ -11,6 +12,7 @@ import React, { useState } from 'react';
 const PublicReportsPage = () => {
   // State untuk Alert Privacy
   const [isPrivacyAlertOpen, setIsPrivacyAlertOpen] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const reports = [
     {
@@ -59,10 +61,27 @@ const PublicReportsPage = () => {
 
   return (
     <div className="min-h-screen bg-[#F7F3ED]">
-      {/* 1. Header (Sudah include Search Bar di dalamnya) */}
-      <Header withSearch={true} withLogo={true} />
+      {/* 1. Header */}
+      <PublicHeader />
 
       <main className="max-w-7xl mx-auto p-6 md:p-12">
+        {/* Search Bar for Reports */}
+        <div className="mb-6 relative w-full">
+          <span className="absolute left-5 top-1/2 -translate-y-1/2 opacity-70">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8EA087" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by keywords in title, description, or category..."
+            className="w-full h-[52px] bg-[#EBE6DE] border border-[#D0D5CB] focus:border-[#8EA087] focus:bg-white rounded-2xl pl-14 pr-6 outline-none text-[15px] text-[#193C1F] shadow-sm transition-all"
+          />
+        </div>
+
         {/* 2. Alert Privacy (Pakai komponen Alert kamu) */}
         <Alert
           isOpen={isPrivacyAlertOpen}
@@ -165,20 +184,33 @@ const PublicReportsPage = () => {
                   Community safety and care quality insights.
                 </p>
               </div>
-              <div className="flex items-center gap-3 bg-white px-5 py-2.5 rounded-2xl border border-[#D0D5CB] shadow-sm">
-                <span className="text-[10px] font-black text-[#8EA087] uppercase tracking-widest">
-                  Sort:
-                </span>
-                <select className="bg-transparent font-bold text-xs text-[#193C1F] outline-none cursor-pointer">
-                  <option>Most Recent</option>
-                  <option>Oldest</option>
-                </select>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="flex items-center gap-3 bg-white px-5 py-2.5 rounded-2xl border border-[#D0D5CB] shadow-sm">
+                  <span className="text-[10px] font-black text-[#8EA087] uppercase tracking-widest">
+                    Sort:
+                  </span>
+                  <select className="bg-transparent font-bold text-xs text-[#193C1F] outline-none cursor-pointer">
+                    <option>Most Recent</option>
+                    <option>Oldest</option>
+                  </select>
+                </div>
+                <Link href="/report">
+                  <Button className="bg-[#193C1F] hover:bg-[#8EA087] text-[#F7F3ED] rounded-2xl px-6 py-2.5 font-bold shadow-md transition-colors flex items-center gap-2">
+                    Create Incident Report
+                  </Button>
+                </Link>
               </div>
             </div>
 
             {/* Grid Reports */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {reports.map((report, i) => (
+              {reports
+                .filter(report => 
+                  report.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                  report.desc.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                  report.category.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .map((report, i) => (
                 <div
                   key={i}
                   className="bg-white rounded-[40px] border border-[#D0D5CB] overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col group"

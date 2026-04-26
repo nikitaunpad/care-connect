@@ -138,12 +138,12 @@ export default function DashboardLayout({
       {/* 2. SIDEBAR: Stay di kiri */}
       <aside className="w-[280px] bg-[#F2EDE4] border-r border-[#D0D5CB] flex flex-col shrink-0 h-full">
         <div className="p-10 flex flex-col gap-1 shrink-0">
-          <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3 no-underline hover:opacity-80 transition-opacity">
             <LogoCareConnect />
             <h1 className="text-[20px] font-black text-[#193C1F] tracking-tight">
               CareConnect
             </h1>
-          </div>
+          </Link>
         </div>
 
         <nav className="flex-1 mt-6 flex flex-col gap-1 overflow-y-auto">

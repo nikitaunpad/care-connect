@@ -1,7 +1,7 @@
 'use client';
 
 import { Alert } from '@/components/alert';
-import { Header } from '@/components/header';
+import { PublicHeader } from '@/components/public-header';
 import { authClient } from '@/lib/auth/auth-client';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
@@ -249,11 +249,7 @@ const DonationContent = () => {
       )}
 
       {/* HEADER */}
-      <Header
-        withSearch={false}
-        withLogo={true}
-        onLogoutClick={() => setIsLogoutAlertOpen(true)}
-      />
+      <PublicHeader />
 
       {/* MAIN CONTENT */}
       <main className="flex-grow max-w-6xl mx-auto px-6 py-12 w-full grid grid-cols-1 md:grid-cols-12 gap-8">
