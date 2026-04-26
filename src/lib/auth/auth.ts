@@ -1,3 +1,7 @@
+import {
+  sendResetPasswordEmail,
+  sendVerificationEmail,
+} from '@/lib/email/email';
 import { prisma } from '@/lib/prisma';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
@@ -38,6 +42,33 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true,
+    autoSignIn: false,
+    sendResetPassword: async ({ user, url }) => {
+      void sendResetPasswordEmail({ user, url });
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    expiresIn: 60 * 60,
+    sendVerificationEmail: async ({ user, url }) => {
+      void sendVerificationEmail({ user, url });
+    },
+  },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      mapProfileToUser: (profile) => {
+        const email = profile.email ?? '';
+        const emailPrefix = email.split('@')[0] || 'user';
+        return {
+          name: emailPrefix,
+          image: profile.picture,
+        };
+      },
+    },
   },
   plugins: [admin(), openAPI()],
 });

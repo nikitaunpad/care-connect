@@ -1,6 +1,7 @@
 'use client';
 
 import Carousel from '@/components/carousel';
+import { PublicHeader } from '@/components/public-header';
 import { authClient } from '@/lib/auth/auth-client';
 import Link from 'next/link';
 import React from 'react';
@@ -11,65 +12,7 @@ export default function LandingPage() {
 
   return (
     <div className="font-sans antialiased bg-[#F7F3ED] text-[#193C1F] min-h-screen">
-      {/* Navigation */}
-      <header className="sticky top-0 z-[100] w-full bg-[#F7F3ED]/90 backdrop-blur-md py-6 px-12 flex justify-between items-center border-b border-[#D0D5CB]">
-        <Link
-          href="/"
-          className="flex items-center gap-2 transition-opacity hover:opacity-80"
-        >
-          <div className="w-10 h-10 bg-[#193C1F] rounded-lg flex items-center justify-center text-[#F7F3ED]">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.744c0 5.578 4.5 10.13 10.125 10.13 5.625 0 10.125-4.552 10.125-10.13 0-1.494-.273-2.925-.77-4.244a11.959 11.959 0 0 1-8.355-3.212Z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              ></path>
-            </svg>
-          </div>
-          <span className="text-2xl font-bold text-[#193C1F]">CareConnect</span>
-        </Link>
-        <nav className="flex items-center gap-12 text-[#193C1F] font-medium">
-          <Link href="/" className="hover:text-[#8EA087] transition-colors">
-            Home
-          </Link>
-          <Link
-            href={isLoggedIn ? '/consultation' : '/login'}
-            className="hover:text-[#8EA087] transition-colors"
-          >
-            Consultation
-          </Link>
-          <Link
-            href={isLoggedIn ? '/publicreports' : '/login'}
-            className="hover:text-[#8EA087] transition-colors"
-          >
-            Reports
-          </Link>
-          <Link
-            href={isLoggedIn ? '/forum' : '/login'}
-            className="hover:text-[#8EA087] transition-colors"
-          >
-            Forum
-          </Link>
-          <Link
-            href={isLoggedIn ? '/donation' : '/login'}
-            className="hover:text-[#8EA087] transition-colors"
-          >
-            Donation
-          </Link>
-        </nav>
-        <Link href={isLoggedIn ? '/dashboard' : '/login'}>
-          <button className="bg-[#8EA087] text-[#F7F3ED] px-8 py-2.5 rounded-lg font-bold hover:bg-[#193C1F] transition-colors">
-            {isLoggedIn ? 'Dashboard' : 'Login/Register'}
-          </button>
-        </Link>
-      </header>
+      <PublicHeader />
 
       {/* Hero Section */}
       <section className="max-w-[1440px] mx-auto py-24 px-12 flex items-center justify-between">

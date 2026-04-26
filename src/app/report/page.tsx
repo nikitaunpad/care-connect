@@ -3,7 +3,7 @@
 import { Alert } from '@/components/alert';
 import ReportForm from '@/components/form';
 import { ReportSubmitData } from '@/components/form';
-import { Header } from '@/components/header';
+import { PublicHeader } from '@/components/public-header';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -95,31 +95,26 @@ export default function AnonymousReportPage() {
     }
   };
 
-  const confirmNavigation = (targetPath: string, mode: 'nav' | 'logout') => {
-    setAlertConfig({
-      title: mode === 'logout' ? 'Logout?' : 'Leave Page?',
-      description:
-        mode === 'logout'
-          ? 'Are you sure you want to end your session? Your progress will not be saved.'
-          : 'Your report progress will be lost if you navigate away. Continue?',
-      type: mode === 'logout' ? 'danger' : 'warning',
-      onConfirm: () => {
-        setIsAlertOpen(false);
-        router.push(targetPath);
-      },
-    });
-    setIsAlertOpen(true);
-  };
+  // const confirmNavigation = (targetPath: string, mode: 'nav' | 'logout') => {
+  //   setAlertConfig({
+  //     title: mode === 'logout' ? 'Logout?' : 'Leave Page?',
+  //     description:
+  //       mode === 'logout'
+  //         ? 'Are you sure you want to end your session? Your progress will not be saved.'
+  //         : 'Your report progress will be lost if you navigate away. Continue?',
+  //     type: mode === 'logout' ? 'danger' : 'warning',
+  //     onConfirm: () => {
+  //       setIsAlertOpen(false);
+  //       router.push(targetPath);
+  //     },
+  //   });
+  //   setIsAlertOpen(true);
+  // };
 
   return (
     <div className="min-h-screen bg-[#F7F3ED] flex flex-col font-sans">
       <div className="sticky top-0 z-[100] w-full bg-[#F7F3ED]/80 backdrop-blur-md border-b border-[#D0D5CB]/30">
-        <Header
-          withSearch={false}
-          withLogo={true}
-          onProfileClick={() => confirmNavigation('/profile', 'nav')}
-          onLogoutClick={() => confirmNavigation('/login', 'logout')}
-        />
+        <PublicHeader />
       </div>
 
       <main className="max-w-[1200px] mx-auto w-full py-16 px-6 flex-1">

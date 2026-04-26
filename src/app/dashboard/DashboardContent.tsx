@@ -177,21 +177,21 @@ export default function DashboardContent({
         <div className="flex gap-4">
           <button
             suppressHydrationWarning
-            onClick={() => router.push('/consultation')}
+            onClick={() => router.push('/consultation?from=dashboard')}
             className="px-7 py-3.5 bg-[#8EA087] hover:bg-[#193C1F] text-white rounded-2xl font-bold text-[14px] transition-all shadow-lg"
           >
             + New Consultation
           </button>
           <button
             suppressHydrationWarning
-            onClick={() => router.push('/report')}
+            onClick={() => router.push('/report?from=dashboard')}
             className="px-7 py-3.5 bg-white border-2 border-[#D0D5CB] text-[#193C1F] rounded-2xl font-bold text-[14px] transition-all shadow-lg hover:bg-[#EBE6DE]"
           >
             + New Report
           </button>
           <button
             suppressHydrationWarning
-            onClick={() => router.push('/donation')}
+            onClick={() => router.push('/donation?from=dashboard')}
             className="px-7 py-3.5 bg-white border-2 border-[#D0D5CB] text-[#193C1F] rounded-2xl font-bold text-[14px] transition-all shadow-lg hover:bg-[#EBE6DE]"
           >
             + New Donation

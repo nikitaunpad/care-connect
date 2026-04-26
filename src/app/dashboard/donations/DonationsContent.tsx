@@ -379,7 +379,7 @@ export default function DonationsContent({ donations }: DonationsContentProps) {
           </p>
         </div>
         <button
-          onClick={() => router.push('/donation')}
+          onClick={() => router.push('/donation?from=dashboard')}
           className="px-7 py-3.5 bg-[#8EA087] hover:bg-[#193C1F] text-white rounded-2xl font-bold text-[14px] transition-all shadow-lg whitespace-nowrap"
         >
           + New Donation
