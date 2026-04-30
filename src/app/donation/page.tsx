@@ -3,6 +3,7 @@
 import { Alert } from '@/components/alert';
 import { PublicHeader } from '@/components/public-header';
 import { authClient } from '@/lib/auth/auth-client';
+import { syncDonationPayment } from '@/lib/donation-client';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
@@ -179,12 +180,13 @@ const DonationContent = () => {
       }
 
       const token = result?.data?.payment?.token as string | undefined;
+      const orderId = result?.data?.payment?.orderId as string | undefined;
       const clientKey = result?.data?.payment?.clientKey as string | undefined;
 
-      if (!token) {
+      if (!token || !orderId) {
         setMessage({
           type: 'error',
-          text: 'Payment token is missing. Please try again.',
+          text: 'Payment token or order ID is missing. Please try again.',
         });
         setIsSubmitting(false);
         return;
@@ -205,12 +207,32 @@ const DonationContent = () => {
 
           if (midtransWindow.snap) {
             midtransWindow.snap.pay(token, {
-              onSuccess: () => {
-                setMessage({
-                  type: 'success',
-                  text: 'Thank you for your donation! Your payment has been processed.',
-                });
-                setTimeout(() => router.push('/dashboard/donations'), 2000);
+              onSuccess: async () => {
+                try {
+                  const { success, error } = await syncDonationPayment(orderId);
+
+                  if (success) {
+                    setMessage({
+                      type: 'success',
+                      text: 'Thank you for your donation! Your payment has been processed.',
+                    });
+                  } else {
+                    console.warn('Payment sync failed:', error);
+                    setMessage({
+                      type: 'success',
+                      text: 'Thank you for your donation! Redirecting...',
+                    });
+                  }
+
+                  setTimeout(() => router.push('/dashboard/donations'), 2000);
+                } catch (err) {
+                  console.error('Payment sync error:', err);
+                  setMessage({
+                    type: 'success',
+                    text: 'Thank you for your donation! Redirecting...',
+                  });
+                  setTimeout(() => router.push('/dashboard/donations'), 2000);
+                }
               },
               onPending: () => {
                 setMessage({
