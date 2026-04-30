@@ -25,6 +25,17 @@ export async function GET(req: Request) {
         status: true,
         incidentDate: true,
         description: true,
+        evidences: {
+          select: {
+            id: true,
+            fileName: true,
+            fileUrl: true,
+            mimeType: true,
+            fileSize: true,
+            uploadedAt: true,
+          },
+          orderBy: { uploadedAt: 'desc' },
+        },
       },
     });
 
