@@ -31,6 +31,11 @@ export type CreateDonationRepositoryInput = {
   paymentStatus: DonationPaymentStatus;
 };
 
+export type UpdateDonationMidtransInput = {
+  midtransOrderId: string;
+  snapToken: string;
+};
+
 export type DonationUserContext = {
   id: string;
   name?: string;
@@ -45,12 +50,15 @@ export type CreateDonationResult = {
     amount: unknown;
     paymentMethod: string;
     paymentStatus: string;
+    midtransOrderId?: string | null;
+    snapToken?: string | null;
     timestamp: Date;
   };
   payment: {
     orderId: string;
     token: string;
-    redirectUrl: string;
+    redirectUrl?: string;
+    clientKey?: string;
   };
 };
 

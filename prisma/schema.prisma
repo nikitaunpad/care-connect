@@ -211,11 +211,14 @@ model Donation {
   amount        Decimal       @db.Decimal(15, 2)
   paymentMethod PaymentMethod @map("payment_method")
   paymentStatus PaymentStatus @map("payment_status")
+  midtransOrderId String?     @unique @map("midtrans_order_id")
+  snapToken     String?       @db.Text @map("snap_token")
   timestamp     DateTime      @default(now())
 
   user   User   @relation(fields: [userId], references: [id])
   report Report @relation(fields: [reportId], references: [id])
 
+  @@index([midtransOrderId])
   @@map("donations")
 }
 

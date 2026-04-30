@@ -2,6 +2,7 @@ import { PaymentStatus } from '@/generated/prisma/enums';
 import { ApiError, Errors } from '@/lib/error';
 import {
   createMidtransSnapTransaction,
+  getMidtransClientKey,
   getMidtransConfig,
   getMidtransTransactionStatus,
   verifyMidtransSignature,
@@ -12,6 +13,7 @@ import {
   findDonationById,
   findReportById,
   getDonationsByUserId,
+  updateDonationMidtransData,
   updateDonationStatus,
 } from './donation.repositories';
 import { DonationSchema } from './donation.schema';
@@ -191,12 +193,26 @@ export class DonationService {
           },
         });
 
+        try {
+          await updateDonationMidtransData(donation.id, {
+            midtransOrderId: orderId,
+            snapToken: transaction.token,
+          });
+        } catch (updateError) {
+          console.error('Failed to update donation midtrans data:', {
+            donationId: donation.id,
+            orderId,
+            token: transaction.token,
+            error: updateError,
+          });
+        }
+
         return {
           donation,
           payment: {
             orderId,
             token: transaction.token,
-            redirectUrl: transaction.redirect_url,
+            clientKey: getMidtransClientKey(),
           },
         };
       } catch (error) {

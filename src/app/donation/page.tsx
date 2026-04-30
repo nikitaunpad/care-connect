@@ -3,6 +3,7 @@
 import { Alert } from '@/components/alert';
 import { PublicHeader } from '@/components/public-header';
 import { authClient } from '@/lib/auth/auth-client';
+import { syncDonationPayment } from '@/lib/donation-client';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
@@ -35,6 +36,19 @@ const formatReportDate = (value: string) =>
 
 const formatReportDisplayId = (id: number) =>
   `#REP-${String(id).padStart(4, '0')}`;
+
+type MidtransSnapCallback = {
+  onSuccess?: () => void;
+  onPending?: () => void;
+  onError?: () => void;
+  onClose?: () => void;
+};
+
+type MidtransSnapWindow = Window & {
+  snap?: {
+    pay: (token: string, callbacks?: MidtransSnapCallback) => void;
+  };
+};
 
 const DonationContent = () => {
   const router = useRouter();
@@ -165,20 +179,113 @@ const DonationContent = () => {
         return;
       }
 
-      const redirectUrl = result?.data?.payment?.redirectUrl as
-        | string
-        | undefined;
+      const token = result?.data?.payment?.token as string | undefined;
+      const orderId = result?.data?.payment?.orderId as string | undefined;
+      const clientKey = result?.data?.payment?.clientKey as string | undefined;
 
-      if (!redirectUrl) {
+      if (!token || !orderId) {
         setMessage({
           type: 'error',
-          text: 'Payment redirect URL is missing. Please try again.',
+          text: 'Payment token or order ID is missing. Please try again.',
         });
         setIsSubmitting(false);
         return;
       }
 
-      window.location.assign(redirectUrl);
+      // Ensure Snap script loaded with correct client key, then call snap.pay
+      const SNAP_URL = clientKey?.startsWith('SB-')
+        ? 'https://app.sandbox.midtrans.com/snap/snap.js'
+        : 'https://app.midtrans.com/snap/snap.js';
+
+      const loadScriptAndPay = (key?: string) => {
+        const existing = document.querySelector(
+          `script[src="${SNAP_URL}"]`,
+        ) as HTMLScriptElement | null;
+
+        const callPay = () => {
+          const midtransWindow = window as MidtransSnapWindow;
+
+          if (midtransWindow.snap) {
+            midtransWindow.snap.pay(token, {
+              onSuccess: async () => {
+                try {
+                  const { success, error } = await syncDonationPayment(orderId);
+
+                  if (success) {
+                    setMessage({
+                      type: 'success',
+                      text: 'Thank you for your donation! Your payment has been processed.',
+                    });
+                  } else {
+                    console.warn('Payment sync failed:', error);
+                    setMessage({
+                      type: 'success',
+                      text: 'Thank you for your donation! Redirecting...',
+                    });
+                  }
+
+                  setTimeout(() => router.push('/dashboard/donations'), 2000);
+                } catch (err) {
+                  console.error('Payment sync error:', err);
+                  setMessage({
+                    type: 'success',
+                    text: 'Thank you for your donation! Redirecting...',
+                  });
+                  setTimeout(() => router.push('/dashboard/donations'), 2000);
+                }
+              },
+              onPending: () => {
+                setMessage({
+                  type: 'error',
+                  text: 'Payment is pending. Please complete the payment process.',
+                });
+                setIsSubmitting(false);
+              },
+              onError: () => {
+                setMessage({
+                  type: 'error',
+                  text: 'Payment failed. Please try again.',
+                });
+                setIsSubmitting(false);
+              },
+              onClose: () => {
+                setIsSubmitting(false);
+              },
+            });
+          } else {
+            setMessage({
+              type: 'error',
+              text: 'Snap is not available. Please refresh the page.',
+            });
+            setIsSubmitting(false);
+          }
+        };
+
+        if (existing) {
+          // if existing script has wrong client-key, reload it
+          const existingKey =
+            existing.getAttribute('data-client-key') || undefined;
+          if (key && existingKey !== key) {
+            existing.remove();
+            const s = document.createElement('script');
+            s.src = SNAP_URL;
+            if (key) s.setAttribute('data-client-key', key);
+            s.onload = callPay;
+            document.head.appendChild(s);
+          } else {
+            // already present with correct key
+            callPay();
+          }
+        } else {
+          const s = document.createElement('script');
+          s.src = SNAP_URL;
+          if (key) s.setAttribute('data-client-key', key);
+          s.onload = callPay;
+          document.head.appendChild(s);
+        }
+      };
+
+      loadScriptAndPay(clientKey);
     } catch (error) {
       console.error('Donation failed:', error);
       setMessage({
