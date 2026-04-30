@@ -1,4 +1,4 @@
-import { ApiError, Errors } from '@/lib/error';
+import { Errors } from '@/lib/error';
 import { getSupabaseClient } from '@/lib/supabase';
 
 import { CommunityChatRepository } from './community-chat.repositories';
