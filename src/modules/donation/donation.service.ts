@@ -13,6 +13,7 @@ import {
   findDonationById,
   findReportById,
   getDonationsByUserId,
+  updateDonationMidtransData,
   updateDonationStatus,
 } from './donation.repositories';
 import { DonationSchema } from './donation.schema';
@@ -191,6 +192,20 @@ export class DonationService {
             phone: user.phoneNumber,
           },
         });
+
+        try {
+          await updateDonationMidtransData(donation.id, {
+            midtransOrderId: orderId,
+            snapToken: transaction.token,
+          });
+        } catch (updateError) {
+          console.error('Failed to update donation midtrans data:', {
+            donationId: donation.id,
+            orderId,
+            token: transaction.token,
+            error: updateError,
+          });
+        }
 
         return {
           donation,
