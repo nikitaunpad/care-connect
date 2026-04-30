@@ -7,57 +7,51 @@ import { PublicHeader } from '@/components/public-header';
 // Import komponen Alert kamu
 import { ArrowRight, Filter, MapPin } from 'lucide-react';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+
+interface Report {
+  id: string;
+  title: string;
+  category: string;
+  province: string;
+  city: string;
+  status: string;
+  incidentDate: string;
+  description: string;
+  createdAt: string;
+}
 
 const PublicReportsPage = () => {
   // State untuk Alert Privacy
   const [isPrivacyAlertOpen, setIsPrivacyAlertOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [reports, setReports] = useState<Report[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const reports = [
-    {
-      id: '#8291',
-      category: 'Elderly Care',
-      title: 'Staffing levels in...',
-      desc: 'Observation of reduced nighttime staffing levels over a 7-day period....',
-      location: 'Manchester',
-    },
-    {
-      id: '#8290',
-      category: 'Healthcare',
-      title: 'Patient handover...',
-      desc: 'Inconsistencies observed during clinical handover between shift changes....',
-      location: 'London',
-    },
-    {
-      id: '#8289',
-      category: 'Child Safety',
-      title: 'Playground safet...',
-      desc: 'Summary of playground safety maintenance review. Identified speci...',
-      location: 'Birmingham',
-    },
-    {
-      id: '#8288',
-      category: 'Healthcare',
-      title: 'Patient transport...',
-      desc: 'Report detailing delays in patient discharge transport services....',
-      location: 'Bristol',
-    },
-    {
-      id: '#8287',
-      category: 'Elderly Care',
-      title: 'Dietary complian...',
-      desc: 'Compliance check on special dietary requirements. High...',
-      location: 'Leeds',
-    },
-    {
-      id: '#8286',
-      category: 'Healthcare',
-      title: 'Facility...',
-      desc: 'Review of lobby and corridor lighting during winter hours. Reported...',
-      location: 'Newcastle',
-    },
-  ];
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await fetch('/api/publicreports');
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch reports');
+        }
+
+        const data = await response.json();
+        setReports(data.data || []);
+      } catch (err) {
+        console.error('Error fetching reports:', err);
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReports();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#F7F3ED]">
@@ -212,55 +206,87 @@ const PublicReportsPage = () => {
             </div>
 
             {/* Grid Reports */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {reports
-                .filter(
-                  (report) =>
-                    report.title
-                      .toLowerCase()
-                      .includes(searchQuery.toLowerCase()) ||
-                    report.desc
-                      .toLowerCase()
-                      .includes(searchQuery.toLowerCase()) ||
-                    report.category
-                      .toLowerCase()
-                      .includes(searchQuery.toLowerCase()),
-                )
-                .map((report, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-[40px] border border-[#D0D5CB] overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col group"
-                  >
-                    {/* Thumbnail / ID Box */}
-                    <div className="h-44 bg-[#F7F3ED] flex items-center justify-center relative overflow-hidden transition-colors group-hover:bg-[#EBE6DE]">
-                      <span className="relative z-10 text-[10px] font-black uppercase tracking-[0.2em] text-[#8EA087] bg-white px-5 py-2.5 rounded-2xl border border-[#D0D5CB] shadow-sm">
-                        ID: {report.id}
-                      </span>
-                    </div>
+            {isLoading && (
+              <div className="col-span-full flex items-center justify-center py-16">
+                <div className="text-center">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#193C1F] mb-4"></div>
+                  <p className="text-[#8EA087] font-medium">
+                    Loading reports...
+                  </p>
+                </div>
+              </div>
+            )}
 
-                    <div className="p-8 text-left flex flex-col flex-1">
-                      <span className="text-[9px] font-black text-[#8EA087] uppercase tracking-[0.2em] mb-4 inline-block">
-                        {report.category}
-                      </span>
-                      <h3 className="font-black text-xl text-[#193C1F] mb-3 group-hover:text-[#8EA087] transition-colors italic tracking-tight">
-                        {report.title}
-                      </h3>
-                      <p className="text-sm text-[#193C1F]/60 font-medium leading-relaxed mb-8 flex-1 line-clamp-3">
-                        {report.desc}
-                      </p>
+            {error && (
+              <div className="col-span-full bg-red-50 border border-red-200 rounded-2xl p-6">
+                <p className="text-red-700 font-medium">
+                  Failed to load reports: {error}
+                </p>
+              </div>
+            )}
 
-                      <div className="flex justify-between items-center pt-6 border-t border-[#F7F3ED]">
-                        <span className="text-[10px] font-black text-[#8EA087] uppercase flex items-center gap-2 tracking-widest">
-                          <MapPin size={14} strokeWidth={3} /> {report.location}
-                        </span>
-                        <button className="text-[11px] font-black uppercase flex items-center gap-1 text-[#193C1F] hover:gap-3 transition-all tracking-[0.1em]">
-                          Details <ArrowRight size={16} strokeWidth={3} />
-                        </button>
+            {!isLoading && !error && reports.length === 0 && (
+              <div className="col-span-full text-center py-16">
+                <p className="text-[#8EA087] font-medium">
+                  No reports available
+                </p>
+              </div>
+            )}
+
+            {!isLoading && !error && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 col-span-full">
+                {reports
+                  .filter(
+                    (report) =>
+                      report.title
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                      report.description
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                      report.category
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()),
+                  )
+                  .map((report) => (
+                    <Link
+                      key={report.id}
+                      href={`/report?id=${report.id}`}
+                      className="group"
+                    >
+                      <div className="bg-white rounded-[40px] border border-[#D0D5CB] overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col h-full">
+                        {/* Thumbnail / ID Box */}
+                        <div className="h-44 bg-[#F7F3ED] flex items-center justify-center relative overflow-hidden transition-colors group-hover:bg-[#EBE6DE]">
+                          <span className="relative z-10 text-[10px] font-black uppercase tracking-[0.2em] text-[#8EA087] bg-white px-5 py-2.5 rounded-2xl border border-[#D0D5CB] shadow-sm">
+                            ID: {report.id.toString().padStart(5, '0')}
+                          </span>
+                        </div>
+
+                        <div className="p-8 text-left flex flex-col flex-1">
+                          <span className="text-[9px] font-black text-[#8EA087] uppercase tracking-[0.2em] mb-4 inline-block">
+                            {report.category}
+                          </span>
+                          <h3 className="font-black text-xl text-[#193C1F] mb-3 group-hover:text-[#8EA087] transition-colors italic tracking-tight line-clamp-2">
+                            {report.title}
+                          </h3>
+                          <p className="text-sm text-[#193C1F]/60 font-medium leading-relaxed mb-8 flex-1 line-clamp-3">
+                            {report.description}
+                          </p>
+
+                          <div className="flex justify-between items-center pt-6 border-t border-[#F7F3ED]">
+                            <span className="text-[10px] font-black text-[#8EA087] uppercase flex items-center gap-2 tracking-widest">
+                              <MapPin size={14} strokeWidth={3} /> {report.city}
+                            </span>
+                            <button className="text-[11px] font-black uppercase flex items-center gap-1 text-[#193C1F] group-hover:gap-3 transition-all tracking-[0.1em]">
+                              Details <ArrowRight size={16} strokeWidth={3} />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
+                    </Link>
+                  ))}
+              </div>
+            )}
           </div>
         </div>
       </main>
