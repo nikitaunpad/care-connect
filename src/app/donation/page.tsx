@@ -162,6 +162,7 @@ const DonationContent = () => {
       formData.append('amount', amount.toString());
       formData.append('paymentMethod', paymentMethod);
       formData.append('reportId', targetReport.id.toString());
+      formData.append('donationType', 'REPORT');
 
       const res = await fetch('/api/donation', {
         method: 'POST',
