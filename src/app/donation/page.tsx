@@ -81,7 +81,7 @@ const DonationContent = () => {
       try {
         setIsLoadingReport(true);
 
-        const res = await fetch(`/api/report?id=${HARDCODED_REPORT_ID}`, {
+        const res = await fetch(`/api/report/${HARDCODED_REPORT_ID}`, {
           signal: controller.signal,
         });
         const result = await res.json().catch(() => ({}));
