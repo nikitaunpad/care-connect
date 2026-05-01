@@ -35,11 +35,29 @@ export async function GET(req: Request) {
         incidentDate: true,
         description: true,
         createdAt: true,
+        evidences: {
+          select: {
+            fileUrl: true,
+            mimeType: true,
+            uploadedAt: true,
+          },
+          orderBy: { uploadedAt: 'desc' },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
+    const reportsWithCover = reports.map(({ evidences, ...report }) => {
+      const coverEvidence = evidences.find((evidence) =>
+        evidence.mimeType.startsWith('image/'),
+      );
 
-    return ok(reports);
+      return {
+        ...report,
+        coverImageUrl: coverEvidence?.fileUrl ?? null,
+      };
+    });
+
+    return ok(reportsWithCover);
   } catch (error) {
     if (error instanceof ApiError) {
       return fail(error.code, error.message, error.status, error.details);
