@@ -162,17 +162,25 @@ export class DonationService {
     try {
       getMidtransConfig();
 
-      const report = await findReportById(input.reportId);
-      if (!report) {
-        throw Errors.notFound('Report not found');
+      let report: { id: number; title: string } | null = null;
+
+      if (input.donationType === 'REPORT') {
+        if (!input.reportId) {
+          throw Errors.badRequest('reportId is required for REPORT donations');
+        }
+        report = await findReportById(input.reportId);
+        if (!report) {
+          throw Errors.notFound('Report not found');
+        }
       }
 
       const donation = await createDonation({
         userId: user.id,
-        reportId: input.reportId,
+        reportId: input.reportId || null,
         amount: input.amount,
         paymentMethod: input.paymentMethod,
         paymentStatus: PaymentStatus.PENDING,
+        donationType: input.donationType,
       });
 
       const orderId = `DONATION-${donation.id}-${Date.now()}`;
@@ -182,10 +190,12 @@ export class DonationService {
           orderId,
           grossAmount: input.amount,
           paymentMethod: input.paymentMethod,
-          report: {
-            id: report.id,
-            title: report.title,
-          },
+          report: report
+            ? {
+                id: report.id,
+                title: report.title,
+              }
+            : undefined,
           customer: {
             name: user.name,
             email: user.email,
