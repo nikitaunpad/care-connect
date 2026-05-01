@@ -30,7 +30,7 @@ export async function syncDonationPayment(
   }
 
   try {
-    const res = await fetch('/api/donation/sync', {
+    const res = await fetch('/api/webhook/midtrans/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderId }),

@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import type {
   CreateDonationInput,
+  DonationType,
   MidtransWebhookInput,
 } from './donation.types';
 
@@ -41,12 +42,15 @@ const MIDTRANS_WEBHOOK_SCHEMA = z.object({
 });
 
 export class DonationSchema {
-  static validateCreateDonation(formData: FormData): CreateDonationInput {
+  static validateCreateDonation(
+    formData: FormData,
+    donationType: DonationType = 'REPORT',
+  ): CreateDonationInput {
     const parseResult = CREATE_DONATION_SCHEMA.safeParse({
       reportId: formData.get('reportId'),
       amount: formData.get('amount'),
       paymentMethod: formData.get('paymentMethod'),
-      donationType: formData.get('donationType') || 'REPORT',
+      donationType: formData.get('donationType') || donationType,
     });
 
     if (!parseResult.success) {

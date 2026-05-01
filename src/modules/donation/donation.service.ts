@@ -21,6 +21,7 @@ import type {
   CreateDonationInput,
   CreateDonationResult,
   DonationPaymentStatus,
+  DonationType,
   DonationUserContext,
   HandleWebhookResult,
   MidtransWebhookInput,
@@ -67,8 +68,11 @@ const parseDonationIdFromOrderId = (orderId: string): number => {
 };
 
 export class DonationService {
-  static validateCreateDonation(formData: FormData): CreateDonationInput {
-    return DonationSchema.validateCreateDonation(formData);
+  static validateCreateDonation(
+    formData: FormData,
+    donationType: DonationType = 'REPORT',
+  ): CreateDonationInput {
+    return DonationSchema.validateCreateDonation(formData, donationType);
   }
 
   static async getDonationHistory(userId: string) {
