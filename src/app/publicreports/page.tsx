@@ -6,6 +6,7 @@ import { Input } from '@/components/input';
 import { PublicHeader } from '@/components/public-header';
 // Import komponen Alert kamu
 import { ArrowRight, Filter, MapPin } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 
@@ -19,6 +20,7 @@ interface Report {
   incidentDate: string;
   description: string;
   createdAt: string;
+  coverImageUrl: string | null;
 }
 
 const PublicReportsPage = () => {
@@ -251,12 +253,23 @@ const PublicReportsPage = () => {
                   .map((report) => (
                     <Link
                       key={report.id}
-                      href={`/report?id=${report.id}`}
+                      href={`/report/${report.id}`}
                       className="group"
                     >
                       <div className="bg-white rounded-[40px] border border-[#D0D5CB] overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col h-full">
                         {/* Thumbnail / ID Box */}
                         <div className="h-44 bg-[#F7F3ED] flex items-center justify-center relative overflow-hidden transition-colors group-hover:bg-[#EBE6DE]">
+                          {report.coverImageUrl ? (
+                            <Image
+                              src={report.coverImageUrl}
+                              alt={report.title}
+                              className="absolute inset-0 h-full w-full object-cover"
+                              fill
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#F7F3ED] via-[#E6DED3] to-[#D0D5CB]" />
+                          )}
                           <span className="relative z-10 text-[10px] font-black uppercase tracking-[0.2em] text-[#8EA087] bg-white px-5 py-2.5 rounded-2xl border border-[#D0D5CB] shadow-sm">
                             ID: {report.id.toString().padStart(5, '0')}
                           </span>
