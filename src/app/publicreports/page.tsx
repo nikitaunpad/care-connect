@@ -8,6 +8,7 @@ import { PublicHeader } from '@/components/public-header';
 import { ArrowRight, Filter, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
 interface Report {
@@ -24,6 +25,7 @@ interface Report {
 }
 
 const PublicReportsPage = () => {
+  const router = useRouter();
   // State untuk Alert Privacy
   const [isPrivacyAlertOpen, setIsPrivacyAlertOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -251,52 +253,73 @@ const PublicReportsPage = () => {
                         .includes(searchQuery.toLowerCase()),
                   )
                   .map((report) => (
-                    <Link
-                      key={report.id}
-                      href={`/report/${report.id}`}
-                      className="group"
-                    >
-                      <div className="bg-white rounded-[40px] border border-[#D0D5CB] overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col h-full">
-                        {/* Thumbnail / ID Box */}
-                        <div className="h-44 bg-[#F7F3ED] flex items-center justify-center relative overflow-hidden transition-colors group-hover:bg-[#EBE6DE]">
-                          {report.coverImageUrl ? (
-                            <Image
-                              src={report.coverImageUrl}
-                              alt={report.title}
-                              className="absolute inset-0 h-full w-full object-cover"
-                              fill
-                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            />
-                          ) : (
-                            <div className="absolute inset-0 bg-gradient-to-br from-[#F7F3ED] via-[#E6DED3] to-[#D0D5CB]" />
-                          )}
-                          <span className="relative z-10 text-[10px] font-black uppercase tracking-[0.2em] text-[#8EA087] bg-white px-5 py-2.5 rounded-2xl border border-[#D0D5CB] shadow-sm">
-                            ID: {report.id.toString().padStart(5, '0')}
-                          </span>
-                        </div>
-
-                        <div className="p-8 text-left flex flex-col flex-1">
-                          <span className="text-[9px] font-black text-[#8EA087] uppercase tracking-[0.2em] mb-4 inline-block">
-                            {report.category}
-                          </span>
-                          <h3 className="font-black text-xl text-[#193C1F] mb-3 group-hover:text-[#8EA087] transition-colors italic tracking-tight line-clamp-2">
-                            {report.title}
-                          </h3>
-                          <p className="text-sm text-[#193C1F]/60 font-medium leading-relaxed mb-8 flex-1 line-clamp-3">
-                            {report.description}
-                          </p>
-
-                          <div className="flex justify-between items-center pt-6 border-t border-[#F7F3ED]">
-                            <span className="text-[10px] font-black text-[#8EA087] uppercase flex items-center gap-2 tracking-widest">
-                              <MapPin size={14} strokeWidth={3} /> {report.city}
+                    <div key={report.id} className="group flex flex-col h-full">
+                      <Link href={`/report/${report.id}`} className="flex-1">
+                        <div className="bg-white rounded-[40px] border border-[#D0D5CB] overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col h-full">
+                          {/* Thumbnail / ID Box */}
+                          <div className="h-44 bg-[#F7F3ED] flex items-center justify-center relative overflow-hidden transition-colors group-hover:bg-[#EBE6DE]">
+                            {report.coverImageUrl ? (
+                              <Image
+                                src={report.coverImageUrl}
+                                alt={report.title}
+                                className="absolute inset-0 h-full w-full object-cover"
+                                fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 bg-gradient-to-br from-[#F7F3ED] via-[#E6DED3] to-[#D0D5CB]" />
+                            )}
+                            <span className="relative z-10 text-[10px] font-black uppercase tracking-[0.2em] text-[#8EA087] bg-white px-5 py-2.5 rounded-2xl border border-[#D0D5CB] shadow-sm">
+                              ID: {report.id.toString().padStart(5, '0')}
                             </span>
-                            <button className="text-[11px] font-black uppercase flex items-center gap-1 text-[#193C1F] group-hover:gap-3 transition-all tracking-[0.1em]">
-                              Details <ArrowRight size={16} strokeWidth={3} />
-                            </button>
+                          </div>
+
+                          <div className="p-8 text-left flex flex-col flex-1">
+                            <span className="text-[9px] font-black text-[#8EA087] uppercase tracking-[0.2em] mb-4 inline-block">
+                              {report.category}
+                            </span>
+                            <h3 className="font-black text-xl text-[#193C1F] mb-3 group-hover:text-[#8EA087] transition-colors italic tracking-tight line-clamp-2">
+                              {report.title}
+                            </h3>
+                            <p className="text-sm text-[#193C1F]/60 font-medium leading-relaxed mb-8 flex-1 line-clamp-3">
+                              {report.description}
+                            </p>
+
+                            <div className="flex justify-between items-center pt-6 border-t border-[#F7F3ED]">
+                              <span className="text-[10px] font-black text-[#8EA087] uppercase flex items-center gap-2 tracking-widest">
+                                <MapPin size={14} strokeWidth={3} />{' '}
+                                {report.city}
+                              </span>
+                              <span className="text-[11px] font-black uppercase flex items-center gap-1 text-[#193C1F] group-hover:gap-3 transition-all tracking-[0.1em]">
+                                Details <ArrowRight size={16} strokeWidth={3} />
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </Link>
+                      </Link>
+                      {/* Donate Button */}
+                      <button
+                        onClick={() =>
+                          router.push(`/donation/report/${report.id}`)
+                        }
+                        className="mt-3 w-full py-3 bg-[#8EA087] hover:bg-[#193C1F] text-white text-[12px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-sm flex items-center justify-center gap-2"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                          />
+                        </svg>
+                        Donate for This Case
+                      </button>
+                    </div>
                   ))}
               </div>
             )}

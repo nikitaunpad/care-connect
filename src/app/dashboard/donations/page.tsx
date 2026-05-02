@@ -22,6 +22,9 @@ export default async function DonationsPage() {
       paymentMethod: true,
       paymentStatus: true,
       timestamp: true,
+      reportId: true,
+      midtransOrderId: true,
+      snapToken: true,
       report: {
         select: {
           title: true,
