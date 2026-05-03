@@ -39,7 +39,7 @@ export default function CommunityChatContent() {
   const [replyingTo, setReplyingTo] = useState<null | {
     id: number;
     isAnonymous: boolean;
-    user?: { name: string };
+    user?: { name?: string; image?: string };
     content: string;
   }>(null);
 
@@ -347,7 +347,7 @@ export default function CommunityChatContent() {
                     roleInChannel?: string;
                     replyTo?: {
                       isAnonymous: boolean;
-                      user?: { name: string };
+                      user?: { name?: string };
                       content: string;
                     };
                     mediaUrl?: string;
