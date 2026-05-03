@@ -5,34 +5,54 @@ import { CommunityChatRepository } from './community-chat.repositories';
 import { CreateChannelDTO, SendMessageDTO } from './community-chat.types';
 
 export const CommunityChatService = {
-  async listChannels(userId?: string) {
-    const channels = await CommunityChatRepository.getAllChannels();
+  async listChannels(userId?: string, all: boolean = false) {
+    if (!userId || all) {
+      const channels = await CommunityChatRepository.getAllChannels();
 
-    // Sort by latest activity (last message timestamp)
-    const sortedChannels = channels.sort((a, b) => {
-      const timeA = a.chats[0]?.timestamp.getTime() ?? a.createdAt.getTime();
-      const timeB = b.chats[0]?.timestamp.getTime() ?? b.createdAt.getTime();
-      return timeB - timeA;
-    });
+      // Sort by latest activity (last message timestamp)
+      const sortedChannels = channels.sort((a, b) => {
+        const timeA = a.chats[0]?.timestamp.getTime() ?? a.createdAt.getTime();
+        const timeB = b.chats[0]?.timestamp.getTime() ?? b.createdAt.getTime();
+        return timeB - timeA;
+      });
 
-    if (!userId) return sortedChannels;
+      if (!userId) return sortedChannels;
 
-    // If userId provided, check if user is member of each channel
-    const channelsWithMembership = await Promise.all(
-      sortedChannels.map(async (channel) => {
-        const membership = await CommunityChatRepository.checkMembership(
-          userId,
-          channel.id,
-        );
-        return {
-          ...channel,
-          isMember: !!membership,
-          myRole: membership?.role || null,
-        };
-      }),
-    );
+      // If userId provided but all=true, check if user is member of each channel
+      const channelsWithMembership = await Promise.all(
+        sortedChannels.map(async (channel) => {
+          const membership = await CommunityChatRepository.checkMembership(
+            userId,
+            channel.id,
+          );
+          return {
+            ...channel,
+            isMember: !!membership,
+            myRole: membership?.role || null,
+          };
+        }),
+      );
 
-    return channelsWithMembership;
+      return channelsWithMembership;
+    }
+
+    // Default: Return only joined channels if userId is provided and all=false
+    const joinedChannels =
+      await CommunityChatRepository.getJoinedChannels(userId);
+
+    const sortedJoined = joinedChannels
+      .map((channel) => ({
+        ...channel,
+        isMember: true,
+        myRole: channel.members?.[0]?.role || null,
+      }))
+      .sort((a, b) => {
+        const timeA = a.chats[0]?.timestamp.getTime() ?? a.createdAt.getTime();
+        const timeB = b.chats[0]?.timestamp.getTime() ?? b.createdAt.getTime();
+        return timeB - timeA;
+      });
+
+    return sortedJoined;
   },
 
   async getChannelDetails(channelId: number, userId: string) {
