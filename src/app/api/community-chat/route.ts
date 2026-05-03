@@ -9,7 +9,10 @@ export async function GET(req: NextRequest) {
     const session = await auth.api.getSession({ headers: req.headers });
     const userId = session?.user?.id;
 
-    const channels = await CommunityChatService.listChannels(userId);
+    const { searchParams } = new URL(req.url);
+    const all = searchParams.get('all') === 'true';
+
+    const channels = await CommunityChatService.listChannels(userId, all);
     return NextResponse.json(channels);
   } catch (error) {
     if (error instanceof ApiError) {
