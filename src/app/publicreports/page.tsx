@@ -253,8 +253,14 @@ const PublicReportsPage = () => {
                         .includes(searchQuery.toLowerCase()),
                   )
                   .map((report) => (
-                    <div key={report.id} className="group flex flex-col h-full">
-                      <Link href={`/report/${report.id}`} className="flex-1">
+                    <div
+                      key={report.id}
+                      className="group relative flex flex-col h-full"
+                    >
+                      <Link
+                        href={`/publicreports/${report.id}`}
+                        className="flex-1"
+                      >
                         <div className="bg-white rounded-[40px] border border-[#D0D5CB] overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col h-full">
                           {/* Thumbnail / ID Box */}
                           <div className="h-44 bg-[#F7F3ED] flex items-center justify-center relative overflow-hidden transition-colors group-hover:bg-[#EBE6DE]">
@@ -269,6 +275,35 @@ const PublicReportsPage = () => {
                             ) : (
                               <div className="absolute inset-0 bg-gradient-to-br from-[#F7F3ED] via-[#E6DED3] to-[#D0D5CB]" />
                             )}
+                            {/* Hover overlay */}
+                            <div className="absolute inset-0 bg-[#193C1F]/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 z-10">
+                              <span className="text-white font-black text-sm uppercase tracking-widest">
+                                View Details
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  router.push(`/donation/report/${report.id}`);
+                                }}
+                                className="px-4 py-2 bg-[#8EA087] hover:bg-white hover:text-[#193C1F] text-white text-[11px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-1.5"
+                              >
+                                <svg
+                                  className="w-3 h-3"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                  />
+                                </svg>
+                                Donate for This Case
+                              </button>
+                            </div>
                             <span className="relative z-10 text-[10px] font-black uppercase tracking-[0.2em] text-[#8EA087] bg-white px-5 py-2.5 rounded-2xl border border-[#D0D5CB] shadow-sm">
                               ID: {report.id.toString().padStart(5, '0')}
                             </span>
@@ -297,28 +332,6 @@ const PublicReportsPage = () => {
                           </div>
                         </div>
                       </Link>
-                      {/* Donate Button */}
-                      <button
-                        onClick={() =>
-                          router.push(`/donation/report/${report.id}`)
-                        }
-                        className="mt-3 w-full py-3 bg-[#8EA087] hover:bg-[#193C1F] text-white text-[12px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-sm flex items-center justify-center gap-2"
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                          />
-                        </svg>
-                        Donate for This Case
-                      </button>
                     </div>
                   ))}
               </div>
