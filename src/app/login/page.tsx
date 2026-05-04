@@ -196,17 +196,10 @@ export default function LoginPage() {
         const { data: session } = await authClient.getSession();
 
         if (session?.user) {
-          // @ts-expect-error: Better Auth user type doesn't include role by default
-          const userRole = session.user.role;
-
-          if (userRole === 'PSYCHOLOGIST') {
-            router.push('/dashboard/psikolog');
-          } else {
-            router.push('/dashboard');
-          }
+          router.push('/');
         } else {
           // Fallback jika session tidak langsung terbaca
-          router.push('/dashboard');
+          router.push('/');
         }
       }
     } catch (err) {
@@ -267,7 +260,7 @@ export default function LoginPage() {
     try {
       const { error } = await authClient.signIn.social({
         provider: 'google',
-        callbackURL: '/dashboard',
+        callbackURL: '/',
       });
 
       if (error) throw new Error(error.message);

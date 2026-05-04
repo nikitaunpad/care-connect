@@ -83,7 +83,13 @@ function PublicHeaderContent() {
               href={isLoggedIn ? '/publicreports' : '/login'}
               className={`transition-colors ${isActive('/publicreports') ? 'text-[#8EA087] font-bold border-b-2 border-[#8EA087] pb-1' : 'hover:text-[#8EA087]'}`}
             >
-              Reports
+              Public Reports
+            </Link>
+            <Link
+              href={isLoggedIn ? '/report' : '/login'}
+              className={`transition-colors ${isActive('/report') ? 'text-[#8EA087] font-bold border-b-2 border-[#8EA087] pb-1' : 'hover:text-[#8EA087]'}`}
+            >
+              Report
             </Link>
             <Link
               href={isLoggedIn ? '/forums' : '/login'}
