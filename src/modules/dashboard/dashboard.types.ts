@@ -17,3 +17,49 @@ export type PsychologistDashboardStats = {
   recentConsultations: DashboardConsultation[];
   completedConsultations: DashboardConsultation[];
 };
+
+export type AdminDashboardStatusChart = {
+  status: string;
+  count: number;
+};
+
+export type AdminDashboardDonationChartPoint = {
+  date: string;
+  total: number;
+  count: number;
+};
+
+export type AdminDashboardDonationTotals = {
+  allTime: number;
+  today: number;
+  month: number;
+};
+
+export type AdminDashboardRecentDonation = {
+  id: number;
+  amount: number;
+  paymentMethod: string;
+  timestamp: string;
+  donationType: string;
+  user: {
+    name: string;
+    email: string;
+  };
+  report: {
+    title: string;
+  } | null;
+};
+
+export type AdminDashboardData = {
+  totalReports: number;
+  pendingReports: number;
+  reportsChartData: AdminDashboardStatusChart[];
+  totalConsultations: number;
+  activeConsultations: number;
+  consultChartData: AdminDashboardStatusChart[];
+  totalDonationsCount: number;
+  donationTotals: AdminDashboardDonationTotals;
+  totalChats: number;
+  donationChartData: AdminDashboardDonationChartPoint[];
+  recentDonations: AdminDashboardRecentDonation[];
+};

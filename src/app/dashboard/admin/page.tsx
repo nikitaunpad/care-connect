@@ -1,4 +1,6 @@
-import { prisma } from '@/lib/prisma';
+import type { ApiFailure, ApiSuccess } from '@/lib/api-response';
+import type { AdminDashboardData } from '@/modules/dashboard/dashboard.types';
+import { headers } from 'next/headers';
 
 import {
   ConsultationLineChart,
@@ -13,120 +15,63 @@ const fmt = (v: number) =>
     minimumFractionDigits: 0,
   }).format(v);
 
-function getLast7Days() {
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    d.setHours(0, 0, 0, 0);
-    return d;
+async function getAdminDashboardData(): Promise<AdminDashboardData> {
+  const headerList = await headers();
+  const host = headerList.get('host');
+
+  if (!host) {
+    throw new Error('Missing request host');
+  }
+
+  const protocol = headerList.get('x-forwarded-proto') ?? 'http';
+  const cookie = headerList.get('cookie') ?? '';
+  const res = await fetch(`${protocol}://${host}/api/dashboard/admin`, {
+    cache: 'no-store',
+    headers: {
+      cookie,
+    },
   });
+
+  if (!res.ok) {
+    throw new Error('Failed to load admin dashboard data');
+  }
+
+  const payload = (await res.json()) as
+    | ApiSuccess<AdminDashboardData>
+    | ApiFailure;
+
+  if (!payload.success) {
+    throw new Error(payload.error.message);
+  }
+
+  return payload.data;
 }
 
 export default async function AdminDashboardPage() {
-  const now = new Date();
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  );
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-  const [
+  const data = await getAdminDashboardData();
+  const {
     totalReports,
     pendingReports,
-    reportsByStatus,
+    reportsChartData,
     totalConsultations,
     activeConsultations,
-    consultationsByStatus,
+    consultChartData,
     totalDonationsCount,
-    allTimePaid,
-    todayPaid,
-    monthPaid,
     recentDonations,
     totalChats,
-    donations7Days,
-  ] = await Promise.all([
-    prisma.report.count(),
-    prisma.report.count({ where: { status: 'PENDING' } }),
-    prisma.report.groupBy({ by: ['status'], _count: { id: true } }),
-    prisma.consultation.count(),
-    prisma.consultation.count({
-      where: { status: { in: ['SCHEDULED', 'ONGOING'] } },
-    }),
-    prisma.consultation.groupBy({ by: ['status'], _count: { id: true } }),
-    prisma.donation.count({ where: { paymentStatus: 'PAID' } }),
-    prisma.donation.aggregate({
-      _sum: { amount: true },
-      where: { paymentStatus: 'PAID' },
-    }),
-    prisma.donation.aggregate({
-      _sum: { amount: true },
-      where: { paymentStatus: 'PAID', timestamp: { gte: startOfToday } },
-    }),
-    prisma.donation.aggregate({
-      _sum: { amount: true },
-      where: { paymentStatus: 'PAID', timestamp: { gte: startOfMonth } },
-    }),
-    prisma.donation.findMany({
-      where: { paymentStatus: 'PAID' },
-      take: 5,
-      orderBy: { timestamp: 'desc' },
-      select: {
-        id: true,
-        amount: true,
-        paymentMethod: true,
-        timestamp: true,
-        donationType: true,
-        user: { select: { name: true, email: true } },
-        report: { select: { title: true } },
-      },
-    }),
-    prisma.chat.count(),
-    prisma.donation.findMany({
-      where: {
-        paymentStatus: 'PAID',
-        timestamp: { gte: getLast7Days()[0] },
-      },
-      select: { amount: true, timestamp: true },
-    }),
-  ]);
+    donationTotals,
+    donationChartData,
+  } = data;
 
-  // Group donations by day for line chart
-  const days = getLast7Days();
-  const donationChartData = days.map((day) => {
-    const label = day.toLocaleDateString('id-ID', {
-      weekday: 'short',
-      day: 'numeric',
-    });
-    const nextDay = new Date(day);
-    nextDay.setDate(nextDay.getDate() + 1);
-    const dayDonations = donations7Days.filter(
-      (d) => d.timestamp >= day && d.timestamp < nextDay,
-    );
-    return {
-      date: label,
-      total: dayDonations.reduce((sum, d) => sum + Number(d.amount), 0),
-      count: dayDonations.length,
-    };
-  });
-
-  const reportsChartData = reportsByStatus.map((r) => ({
-    status: r.status.charAt(0) + r.status.slice(1).toLowerCase(),
-    count: r._count.id,
-  }));
-
-  const consultChartData = consultationsByStatus.map((c) => ({
-    status: c.status.charAt(0) + c.status.slice(1).toLowerCase(),
-    count: c._count.id,
-  }));
-
-  const fmtDate = (d: Date) =>
-    new Intl.DateTimeFormat('id-ID', {
+  const fmtDate = (d: Date | string) => {
+    const date = typeof d === 'string' ? new Date(d) : d;
+    return new Intl.DateTimeFormat('id-ID', {
       day: '2-digit',
       month: 'short',
       hour: '2-digit',
       minute: '2-digit',
-    }).format(d);
+    }).format(date);
+  };
 
   const fmtMethod = (m: string) =>
     m
@@ -232,7 +177,7 @@ export default async function AdminDashboardPage() {
             All-time Donations
           </p>
           <h3 className="text-2xl font-black text-[#193C1F] mt-1">
-            {fmt(Number(allTimePaid._sum.amount || 0))}
+            {fmt(donationTotals.allTime)}
           </h3>
         </div>
 
@@ -270,15 +215,15 @@ export default async function AdminDashboardPage() {
         {[
           {
             label: "Today's Donations",
-            value: fmt(Number(todayPaid._sum.amount || 0)),
+            value: fmt(donationTotals.today),
           },
           {
             label: "This Month's Donations",
-            value: fmt(Number(monthPaid._sum.amount || 0)),
+            value: fmt(donationTotals.month),
           },
           {
             label: 'All-time Collected',
-            value: fmt(Number(allTimePaid._sum.amount || 0)),
+            value: fmt(donationTotals.allTime),
           },
         ].map((item) => (
           <div
