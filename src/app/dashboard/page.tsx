@@ -21,8 +21,15 @@ export default async function DashboardPage() {
       name: true,
       email: true,
       image: true,
+      role: true,
     },
   });
+
+  if (currentUser?.role === 'ADMIN') {
+    redirect('/dashboard/admin');
+  } else if (currentUser?.role === 'PSYCHOLOGIST') {
+    redirect('/dashboard/psikolog');
+  }
 
   const [consultations, reports, donations, totalConsCount, totalRepCount] =
     await Promise.all([

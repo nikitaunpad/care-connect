@@ -129,6 +129,7 @@ export default function DashboardLayout({
 
   // LOGIKA DETEKSI HALAMAN (Berdasarkan Folder)
   const isAtPsikologPage = pathname.startsWith('/dashboard/psikolog');
+  const isAtAdminPage = pathname.startsWith('/dashboard/admin');
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -158,13 +159,43 @@ export default function DashboardLayout({
           <SidebarItem
             icon={DashboardIcon}
             label="Dashboard"
-            href={isAtPsikologPage ? '/dashboard/psikolog' : '/dashboard'}
+            href={
+              isAtAdminPage
+                ? '/dashboard/admin'
+                : isAtPsikologPage
+                  ? '/dashboard/psikolog'
+                  : '/dashboard'
+            }
             active={
-              pathname === '/dashboard' || pathname === '/dashboard/psikolog'
+              pathname === '/dashboard' ||
+              pathname === '/dashboard/psikolog' ||
+              pathname === '/dashboard/admin'
             }
           />
 
-          {isAtPsikologPage ? (
+          {isAtAdminPage ? (
+            /* --- MENU ADMIN --- */
+            <>
+              <SidebarItem
+                icon={ReportsIcon}
+                label="All Reports"
+                href="/dashboard/admin/reports"
+                active={pathname.startsWith('/dashboard/admin/reports')}
+              />
+              <SidebarItem
+                icon={ConsultationIcon}
+                label="All Consultations"
+                href="/dashboard/admin/consultations"
+                active={pathname.startsWith('/dashboard/admin/consultations')}
+              />
+              <SidebarItem
+                icon={DonationsIcon}
+                label="All Donations"
+                href="/dashboard/admin/donations"
+                active={pathname.startsWith('/dashboard/admin/donations')}
+              />
+            </>
+          ) : isAtPsikologPage ? (
             /* --- MENU PSIKOLOG --- */
             <>
               <SidebarItem

@@ -11,7 +11,7 @@ type CreateMidtransSnapTransactionInput = {
   orderId: string;
   grossAmount: number;
   paymentMethod: 'BANK_TRANSFER' | 'CREDIT_CARD' | 'EWALLET' | 'QRIS';
-  report: {
+  report?: {
     id: number;
     title: string;
   };
@@ -134,11 +134,18 @@ export const createMidtransSnapTransaction = async (
     const snap = getMidtransSnapClient();
     const enabledPayments = mapPaymentMethodToMidtrans(input.paymentMethod);
     const roundedAmount = Math.round(input.grossAmount);
-    const reportDisplayId = formatReportDisplayId(input.report.id);
-    const reportItemName = trimForMidtrans(
-      `Donation for ${reportDisplayId} - ${input.report.title}`,
-      50,
-    );
+    const reportDisplayId = input.report
+      ? formatReportDisplayId(input.report.id)
+      : undefined;
+    const itemId = reportDisplayId
+      ? reportDisplayId.replace('#', '')
+      : 'PLATFORM';
+    const itemName = reportDisplayId
+      ? trimForMidtrans(
+          `Donation for ${reportDisplayId} - ${input.report?.title || ''}`,
+          50,
+        )
+      : 'Donation for CareConnect Platform';
 
     const result = await snap.createTransaction({
       transaction_details: {
@@ -148,8 +155,8 @@ export const createMidtransSnapTransaction = async (
       enabled_payments: enabledPayments,
       item_details: [
         {
-          id: reportDisplayId.replace('#', ''),
-          name: reportItemName,
+          id: itemId,
+          name: itemName,
           quantity: 1,
           price: roundedAmount,
         },
@@ -159,8 +166,12 @@ export const createMidtransSnapTransaction = async (
         email: input.customer.email,
         phone: input.customer.phone,
       },
-      custom_field1: `report_id:${reportDisplayId}`,
-      custom_field2: trimForMidtrans(input.report.title, 255),
+      custom_field1: reportDisplayId
+        ? `report_id:${reportDisplayId}`
+        : 'report_id:PLATFORM',
+      custom_field2: input.report
+        ? trimForMidtrans(input.report.title, 255)
+        : 'Platform Donation',
     });
 
     return result as MidtransSnapTransactionResponse;

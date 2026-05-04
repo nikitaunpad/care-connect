@@ -1,14 +1,37 @@
-'use client';
-
 import Carousel from '@/components/carousel';
 import { PublicHeader } from '@/components/public-header';
-import { authClient } from '@/lib/auth/auth-client';
+import { PaymentStatus } from '@/generated/prisma/enums';
+import { auth } from '@/lib/auth/auth';
+import { prisma } from '@/lib/prisma';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import React from 'react';
 
-export default function LandingPage() {
-  const { data: session } = authClient.useSession();
+export default async function LandingPage() {
+  const session = await auth.api.getSession({ headers: await headers() });
   const isLoggedIn = !!session?.user;
+
+  const [totalReports, totalConsultations, paidDonations, recentReports] =
+    await Promise.all([
+      prisma.report.count(),
+      prisma.consultation.count(),
+      prisma.donation.aggregate({
+        _sum: { amount: true },
+        where: { paymentStatus: PaymentStatus.PAID },
+      }),
+      prisma.report.findMany({
+        take: 3,
+        orderBy: { createdAt: 'desc' },
+        where: { isPublic: true },
+      }),
+    ]);
+
+  const totalDonationAmount = Number(paidDonations._sum.amount || 0);
+  const formattedDonations = new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(totalDonationAmount);
 
   return (
     <div className="font-sans antialiased bg-[#F7F3ED] text-[#193C1F] min-h-screen">
@@ -54,21 +77,27 @@ export default function LandingPage() {
             <p className="text-[#193C1F] font-semibold mb-2 opacity-80">
               Total Reports Handled
             </p>
-            <h2 className="text-6xl font-black text-[#193C1F] mb-4">1,240</h2>
+            <h2 className="text-6xl font-black text-[#193C1F] mb-4">
+              {totalReports}
+            </h2>
             <div className="w-16 h-1 bg-[#8EA087] mx-auto rounded-full"></div>
           </div>
           <div className="bg-[#F7F3ED] p-12 rounded-2xl text-center shadow-sm border-b-4 border-[#8EA087]">
             <p className="text-[#193C1F] font-semibold mb-2 opacity-80">
               Professional Consultations
             </p>
-            <h2 className="text-6xl font-black text-[#193C1F] mb-4">3,500+</h2>
+            <h2 className="text-6xl font-black text-[#193C1F] mb-4">
+              {totalConsultations}
+            </h2>
             <div className="w-16 h-1 bg-[#D1B698] mx-auto rounded-full"></div>
           </div>
           <div className="bg-[#F7F3ED] p-12 rounded-2xl text-center shadow-sm border-b-4 border-[#8EA087]">
             <p className="text-[#193C1F] font-semibold mb-2 opacity-80">
               Community Donations
             </p>
-            <h2 className="text-6xl font-black text-[#193C1F] mb-4">$50,000</h2>
+            <h2 className="text-6xl font-black text-[#193C1F] mb-4">
+              {formattedDonations}
+            </h2>
             <div className="w-16 h-1 bg-[#8EA087] mx-auto rounded-full"></div>
           </div>
         </div>
@@ -203,105 +232,40 @@ export default function LandingPage() {
           </Link>
         </div>
         <div className="grid grid-cols-3 gap-10">
-          <div data-purpose="report-card">
-            <div className="w-full aspect-video bg-[#D0D5CB] rounded-2xl mb-6 flex items-center justify-center text-[#8EA087]">
-              <svg
-                className="w-12 h-12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.744c0 5.578 4.5 10.13 10.125 10.13 5.625 0 10.125-4.552 10.125-10.13 0-1.494-.273-2.925-.77-4.244a11.959 11.959 0 0 1-8.355-3.212Z"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                ></path>
-              </svg>
+          {recentReports.map((report) => (
+            <div data-purpose="report-card" key={report.id}>
+              <div className="w-full aspect-video bg-[#D0D5CB] rounded-2xl mb-6 flex items-center justify-center text-[#8EA087]">
+                <svg
+                  className="w-12 h-12"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.744c0 5.578 4.5 10.13 10.125 10.13 5.625 0 10.125-4.552 10.125-10.13 0-1.494-.273-2.925-.77-4.244a11.959 11.959 0 0 1-8.355-3.212Z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  ></path>
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-[#193C1F] mb-2">
+                Report #{report.id}
+              </h3>
+              <p className="text-[#193C1F] opacity-80 mb-6 truncate">
+                {report.description}
+              </p>
+              <div className="flex gap-2">
+                <span className="bg-[#EDE4D8] text-[#8EA087] px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">
+                  {report.status}
+                </span>
+                <span className="bg-[#D0D5CB] text-[#193C1F] px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">
+                  {report.category}
+                </span>
+              </div>
             </div>
-            <h3 className="text-2xl font-bold text-[#193C1F] mb-2">
-              Report #882
-            </h3>
-            <p className="text-[#193C1F] opacity-80 mb-6">
-              Safety concern regarding workplace harassment addressed and
-              resolved via legal mediation.
-            </p>
-            <div className="flex gap-2">
-              <span className="bg-[#EDE4D8] text-[#8EA087] px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">
-                Resolved
-              </span>
-              <span className="bg-[#D0D5CB] text-[#193C1F] px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">
-                Workplace
-              </span>
-            </div>
-          </div>
-          <div data-purpose="report-card">
-            <div className="w-full aspect-video bg-[#D0D5CB] rounded-2xl mb-6 flex items-center justify-center text-[#8EA087]">
-              <svg
-                className="w-12 h-12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M21.75 12h-2.25m-.166 5.834-1.591-1.591M12 21.75V19.5m-5.834-.166 1.591-1.591M2.25 12h2.25m.166-5.834 1.591 1.591"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                ></path>
-              </svg>
-            </div>
-            <h3 className="text-2xl font-bold text-[#193C1F] mb-2">
-              Report #881
-            </h3>
-            <p className="text-[#193C1F] opacity-80 mb-6">
-              Community-led intervention provided temporary housing and support
-              for individual in crisis.
-            </p>
-            <div className="flex gap-2">
-              <span className="bg-[#D0D5CB] text-[#8EA087] px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">
-                Active
-              </span>
-              <span className="bg-[#EDE4D8] text-[#193C1F] px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">
-                Housing
-              </span>
-            </div>
-          </div>
-          <div data-purpose="report-card">
-            <div className="w-full aspect-video bg-[#D0D5CB] rounded-2xl mb-6 flex items-center justify-center text-[#8EA087]">
-              <svg
-                className="w-12 h-12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                ></path>
-              </svg>
-            </div>
-            <h3 className="text-2xl font-bold text-[#193C1F] mb-2">
-              Report #880
-            </h3>
-            <p className="text-[#193C1F] opacity-80 mb-6">
-              Emergency mental health consultation provided within 30 minutes of
-              initial report submission.
-            </p>
-            <div className="flex gap-2">
-              <span className="bg-[#EDE4D8] text-[#8EA087] px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">
-                Emergency
-              </span>
-              <span className="bg-[#D0D5CB] text-[#193C1F] px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">
-                Crisis
-              </span>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
