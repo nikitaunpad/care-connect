@@ -86,16 +86,23 @@ function PublicHeaderContent() {
               Reports
             </Link>
             <Link
-              href="#"
-              onClick={(e) => e.preventDefault()}
-              className="transition-colors opacity-50 cursor-not-allowed hover:text-[#8EA087]"
-              title="Coming Soon"
+              href={isLoggedIn ? '/forums' : '/login'}
+              className={`transition-colors ${
+                isActive('/forums')
+                  ? 'text-[#8EA087] font-bold border-b-2 border-[#8EA087] pb-1'
+                  : 'hover:text-[#8EA087]'
+              }`}
             >
               Forum
             </Link>
+
             <Link
               href={isLoggedIn ? '/donation' : '/login'}
-              className={`transition-colors ${isActive('/donation') ? 'text-[#8EA087] font-bold border-b-2 border-[#8EA087] pb-1' : 'hover:text-[#8EA087]'}`}
+              className={`transition-colors ${
+                isActive('/donation')
+                  ? 'text-[#8EA087] font-bold border-b-2 border-[#8EA087] pb-1'
+                  : 'hover:text-[#8EA087]'
+              }`}
             >
               Donation
             </Link>

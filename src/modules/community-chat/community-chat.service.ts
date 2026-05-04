@@ -5,34 +5,54 @@ import { CommunityChatRepository } from './community-chat.repositories';
 import { CreateChannelDTO, SendMessageDTO } from './community-chat.types';
 
 export const CommunityChatService = {
-  async listChannels(userId?: string) {
-    const channels = await CommunityChatRepository.getAllChannels();
+  async listChannels(userId?: string, all: boolean = false) {
+    if (!userId || all) {
+      const channels = await CommunityChatRepository.getAllChannels();
 
-    // Sort by latest activity (last message timestamp)
-    const sortedChannels = channels.sort((a, b) => {
-      const timeA = a.chats[0]?.timestamp.getTime() ?? a.createdAt.getTime();
-      const timeB = b.chats[0]?.timestamp.getTime() ?? b.createdAt.getTime();
-      return timeB - timeA;
-    });
+      // Sort by latest activity (last message timestamp)
+      const sortedChannels = channels.sort((a, b) => {
+        const timeA = a.chats[0]?.timestamp.getTime() ?? a.createdAt.getTime();
+        const timeB = b.chats[0]?.timestamp.getTime() ?? b.createdAt.getTime();
+        return timeB - timeA;
+      });
 
-    if (!userId) return sortedChannels;
+      if (!userId) return sortedChannels;
 
-    // If userId provided, check if user is member of each channel
-    const channelsWithMembership = await Promise.all(
-      sortedChannels.map(async (channel) => {
-        const membership = await CommunityChatRepository.checkMembership(
-          userId,
-          channel.id,
-        );
-        return {
-          ...channel,
-          isMember: !!membership,
-          myRole: membership?.role || null,
-        };
-      }),
-    );
+      // If userId provided but all=true, check if user is member of each channel
+      const channelsWithMembership = await Promise.all(
+        sortedChannels.map(async (channel) => {
+          const membership = await CommunityChatRepository.checkMembership(
+            userId,
+            channel.id,
+          );
+          return {
+            ...channel,
+            isMember: !!membership,
+            myRole: membership?.role || null,
+          };
+        }),
+      );
 
-    return channelsWithMembership;
+      return channelsWithMembership;
+    }
+
+    // Default: Return only joined channels if userId is provided and all=false
+    const joinedChannels =
+      await CommunityChatRepository.getJoinedChannels(userId);
+
+    const sortedJoined = joinedChannels
+      .map((channel) => ({
+        ...channel,
+        isMember: true,
+        myRole: channel.members?.[0]?.role || null,
+      }))
+      .sort((a, b) => {
+        const timeA = a.chats[0]?.timestamp.getTime() ?? a.createdAt.getTime();
+        const timeB = b.chats[0]?.timestamp.getTime() ?? b.createdAt.getTime();
+        return timeB - timeA;
+      });
+
+    return sortedJoined;
   },
 
   async getChannelDetails(channelId: number, userId: string) {
@@ -129,15 +149,27 @@ export const CommunityChatService = {
     channelId: number,
     newRole: 'OWNER' | 'MODERATOR' | 'MEMBER',
   ) {
-    if (adminRole !== 'ADMIN')
-      throw Errors.forbidden('Only admins can change roles');
+    const callerMembership = await CommunityChatRepository.checkMembership(
+      adminId,
+      channelId,
+    );
+
+    const isGlobalAdmin = adminRole === 'ADMIN';
+    const isOwner = callerMembership?.role === 'OWNER';
+
+    if (!isGlobalAdmin && !isOwner) {
+      throw Errors.forbidden(
+        'Only channel owners or global admins can change roles',
+      );
+    }
 
     const targetMembership = await CommunityChatRepository.checkMembership(
       targetUserId,
       channelId,
     );
-    if (!targetMembership)
+    if (!targetMembership) {
       throw Errors.notFound('User is not a member of this channel');
+    }
 
     return CommunityChatRepository.updateMemberRole(
       targetUserId,
@@ -168,24 +200,53 @@ export const CommunityChatService = {
     targetUserId: string,
     channelId: number,
   ) {
-    if (adminRole !== 'ADMIN')
-      throw Errors.forbidden('Only admins can kick users');
-
     if (adminId === targetUserId) {
       throw Errors.badRequest('You cannot kick yourself');
     }
 
+    const callerMembership = await CommunityChatRepository.checkMembership(
+      adminId,
+      channelId,
+    );
     const targetMembership = await CommunityChatRepository.checkMembership(
       targetUserId,
       channelId,
     );
-    if (!targetMembership)
-      throw Errors.notFound('User is not a member of this channel');
 
-    if (targetMembership.role === 'OWNER') {
-      throw Errors.forbidden('Cannot kick the channel owner');
+    if (!targetMembership) {
+      throw Errors.notFound('User is not a member of this channel');
     }
 
-    return CommunityChatRepository.removeMember(targetUserId, channelId);
+    const isGlobalAdmin = adminRole === 'ADMIN';
+    const isOwner = callerMembership?.role === 'OWNER';
+    const isModerator = callerMembership?.role === 'MODERATOR';
+
+    // Global Admin can kick anyone (except maybe other global admins, but let's keep it simple)
+    if (isGlobalAdmin) {
+      return CommunityChatRepository.removeMember(targetUserId, channelId);
+    }
+
+    // Owner can kick Moderator and Member
+    if (isOwner) {
+      if (targetMembership.role === 'OWNER') {
+        throw Errors.forbidden('Cannot kick another owner');
+      }
+      return CommunityChatRepository.removeMember(targetUserId, channelId);
+    }
+
+    // Moderator can kick Member
+    if (isModerator) {
+      if (
+        targetMembership.role === 'OWNER' ||
+        targetMembership.role === 'MODERATOR'
+      ) {
+        throw Errors.forbidden('Moderators can only kick regular members');
+      }
+      return CommunityChatRepository.removeMember(targetUserId, channelId);
+    }
+
+    throw Errors.forbidden(
+      'You do not have permission to kick users from this channel',
+    );
   },
 };
