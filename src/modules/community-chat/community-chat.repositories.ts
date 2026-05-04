@@ -116,4 +116,28 @@ export const CommunityChatRepository = {
       data: { role },
     });
   },
+
+  async getJoinedChannels(userId: string) {
+    return prisma.channel.findMany({
+      where: {
+        members: {
+          some: { userId },
+        },
+      },
+      include: {
+        chats: {
+          orderBy: { timestamp: 'desc' },
+          take: 1,
+          select: { timestamp: true, content: true },
+        },
+        members: {
+          where: { userId },
+          select: { role: true },
+        },
+        _count: {
+          select: { members: true },
+        },
+      },
+    });
+  },
 };
