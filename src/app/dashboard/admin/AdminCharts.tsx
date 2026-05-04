@@ -32,13 +32,17 @@ export function DonationLineChart({ data }: { data: DonationChartData[] }) {
           }
         />
         <Tooltip
-          formatter={(value: number) =>
-            new Intl.NumberFormat('id-ID', {
+          formatter={(value) => {
+            if (typeof value !== 'number') {
+              return String(value ?? '');
+            }
+
+            return new Intl.NumberFormat('id-ID', {
               style: 'currency',
               currency: 'IDR',
               minimumFractionDigits: 0,
-            }).format(value)
-          }
+            }).format(value);
+          }}
           contentStyle={{
             background: '#fff',
             border: '1px solid #D0D5CB',
