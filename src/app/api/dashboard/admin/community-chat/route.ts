@@ -1,4 +1,5 @@
 import { fail, ok } from '@/lib/api-response';
+import { ApiError } from '@/lib/error';
 import { prisma } from '@/lib/prisma';
 import { createChannelSchema } from '@/modules/community-chat/community-chat.schema';
 import { CommunityChatService } from '@/modules/community-chat/community-chat.service';
@@ -55,18 +56,10 @@ export async function POST(req: Request) {
     );
     return ok(channel);
   } catch (error) {
-    if (error && typeof error === 'object' && 'statusCode' in error) {
-      const err = error as {
-        code?: ErrorCode;
-        message?: string;
-        statusCode: number;
-      };
-      return fail(
-        err.code || 'BAD_REQUEST',
-        err.message || 'Error',
-        err.statusCode,
-      );
+    if (error instanceof ApiError) {
+      return fail(error.code, error.message, error.status, error.details);
     }
+    console.error('ADMIN COMMUNITY CHAT POST ERROR:', error);
     return fail('INTERNAL_SERVER_ERROR', 'Failed to create channel', 500);
   }
 }
