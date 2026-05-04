@@ -194,6 +194,18 @@ export default function DashboardLayout({
                 href="/dashboard/admin/donations"
                 active={pathname.startsWith('/dashboard/admin/donations')}
               />
+              <SidebarItem
+                icon={DashboardIcon}
+                label="Users"
+                href="/dashboard/admin/users"
+                active={pathname.startsWith('/dashboard/admin/users')}
+              />
+              <SidebarItem
+                icon={ReportsIcon}
+                label="Community Chat"
+                href="/dashboard/admin/community-chat"
+                active={pathname.startsWith('/dashboard/admin/community-chat')}
+              />
             </>
           ) : isAtPsikologPage ? (
             /* --- MENU PSIKOLOG --- */

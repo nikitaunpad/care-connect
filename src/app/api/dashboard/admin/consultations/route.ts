@@ -15,7 +15,8 @@ export async function GET(req: Request) {
   const perPage = 10;
   const isActive = tab !== 'history';
 
-  const where = isActive
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const where: any = isActive
     ? { status: { in: ['SCHEDULED', 'ONGOING'] } }
     : { status: { in: ['COMPLETED', 'CANCELLED'] } };
 

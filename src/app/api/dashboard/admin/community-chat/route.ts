@@ -31,6 +31,46 @@ export async function GET(req: Request) {
   return ok(channels);
 }
 
+export async function POST(req: Request) {
+  const { session, response } = await requireAdminSession();
+  if (response) return response;
+
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return fail('BAD_REQUEST', 'Invalid JSON body', 400);
+  }
+
+  const parsed = createChannelSchema.safeParse(body);
+  if (!parsed.success) {
+    return fail('BAD_REQUEST', 'Invalid channel payload', 400);
+  }
+
+  try {
+    const channel = await CommunityChatService.createNewChannel(
+      session!.user.id,
+      'ADMIN',
+      parsed.data,
+    );
+    return ok(channel);
+  } catch (error) {
+    if (error && typeof error === 'object' && 'statusCode' in error) {
+      const err = error as {
+        code?: ErrorCode;
+        message?: string;
+        statusCode: number;
+      };
+      return fail(
+        err.code || 'BAD_REQUEST',
+        err.message || 'Error',
+        err.statusCode,
+      );
+    }
+    return fail('INTERNAL_SERVER_ERROR', 'Failed to create channel', 500);
+  }
+}
+
 export async function PATCH(req: Request) {
   const { response } = await requireAdminSession();
   if (response) return response;
@@ -49,6 +89,7 @@ export async function PATCH(req: Request) {
     return fail('BAD_REQUEST', 'id must be a positive integer', 400);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id: _id, ...payload } = body;
   const parsed = updateChannelSchema.safeParse(payload);
 
