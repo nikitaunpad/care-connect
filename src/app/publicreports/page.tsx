@@ -306,7 +306,7 @@ const PublicReportsPage = () => {
                 {filteredReports.map((report) => (
                   <Link
                     key={report.id}
-                    href={`/report/${report.id}`}
+                    href={`/publicreports/${report.id}`}
                     className="group"
                   >
                     <div className="bg-white rounded-[48px] border border-[#D0D5CB] overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col h-full text-left">
