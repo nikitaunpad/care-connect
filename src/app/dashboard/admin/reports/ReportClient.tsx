@@ -184,15 +184,15 @@ export function ReportClient({
       </div>
 
       <div className="bg-white border border-[#D0D5CB] rounded-2xl overflow-hidden shadow-sm">
-        <table className="w-full text-left">
+        <table className="w-full text-left table-fixed">
           <thead className="bg-[#F7F3ED] text-[11px] text-[#8EA087] font-black uppercase tracking-widest">
             <tr>
-              <th className="px-6 py-4">Report</th>
-              <th className="px-6 py-4">Reporter</th>
-              <th className="px-6 py-4">Category</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4">Donations</th>
-              <th className="px-6 py-4 text-right">Actions</th>
+              <th className="px-6 py-4 w-[320px]">Report</th>
+              <th className="px-6 py-4 w-[220px]">Reporter</th>
+              <th className="px-6 py-4 w-[140px]">Category</th>
+              <th className="px-6 py-4 w-[120px]">Status</th>
+              <th className="px-6 py-4 w-[140px]">Donations</th>
+              <th className="px-6 py-4 w-[140px] text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F7F3ED] text-sm">
@@ -211,16 +211,16 @@ export function ReportClient({
                   key={r.id}
                   className="hover:bg-[#F7F3ED]/50 transition-colors"
                 >
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 align-top">
                     <Link
                       href={`/publicreports/${r.id}`}
                       className="hover:underline"
                     >
-                      <p className="font-bold text-[#193C1F] line-clamp-1">
+                      <p className="font-bold text-[#193C1F] line-clamp-2 max-w-[300px]">
                         {r.title}
                       </p>
                     </Link>
-                    <p className="text-[11px] text-[#8EA087] mt-0.5">
+                    <p className="text-[11px] text-[#8EA087] mt-0.5 truncate max-w-[300px]">
                       {r.city}, {r.province} •{' '}
                       {r.hasEvidence ? '📎 Has evidence' : 'No evidence'}
                     </p>
