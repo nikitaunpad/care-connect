@@ -75,7 +75,8 @@ interface DashboardConsultation {
 }
 
 type PsychologistDashboardProps = {
-  consultations: DashboardConsultation[];
+  upcomingConsultations: DashboardConsultation[];
+  completedConsultations: DashboardConsultation[];
   displayName: string;
   totalConsultationsCount: number;
   pendingConsultationsCount: number;
@@ -83,7 +84,8 @@ type PsychologistDashboardProps = {
 };
 
 export default function PsychologistDashboardContent({
-  consultations = [],
+  upcomingConsultations = [],
+  completedConsultations = [],
   displayName = 'Psychologist',
   totalConsultationsCount,
   pendingConsultationsCount,
@@ -92,7 +94,7 @@ export default function PsychologistDashboardContent({
   const searchParams = useSearchParams();
   const searchBarQuery = searchParams.get('search')?.toLowerCase() || '';
 
-  const filteredData = consultations.filter((item) => {
+  const pendingData = upcomingConsultations.filter((item) => {
     if (!searchBarQuery) return true;
     const patientName = item.user?.name || '';
     const title = item.title || '';
@@ -104,12 +106,17 @@ export default function PsychologistDashboardContent({
     );
   });
 
-  const pendingConsultations = filteredData.filter(
-    (c) => String(c.status) === 'SCHEDULED' || String(c.status) === 'PENDING',
-  );
-  const completedConsultations = filteredData.filter(
-    (c) => String(c.status) === 'COMPLETED',
-  );
+  const completedData = completedConsultations.filter((item) => {
+    if (!searchBarQuery) return true;
+    const patientName = item.user?.name || '';
+    const title = item.title || '';
+    const status = String(item.status || '');
+    return (
+      patientName.toLowerCase().includes(searchBarQuery) ||
+      title.toLowerCase().includes(searchBarQuery) ||
+      status.toLowerCase().includes(searchBarQuery)
+    );
+  });
 
   return (
     <div className="space-y-10 animate-fade-in">
@@ -185,7 +192,7 @@ export default function PsychologistDashboardContent({
               </tr>
             </thead>
             <tbody className="text-[14px] text-[#193C1F]">
-              {pendingConsultations.slice(0, 3).map((row) => (
+              {pendingData.slice(0, 3).map((row) => (
                 <tr
                   key={row.id}
                   className="border-b border-[#F7F3ED] hover:bg-[#FDFCFB]"
@@ -207,7 +214,7 @@ export default function PsychologistDashboardContent({
               ))}
             </tbody>
           </table>
-          {pendingConsultations.length === 0 && (
+          {pendingData.length === 0 && (
             <p className="p-10 text-center text-[#8EA087]">
               No upcoming consultations found.
             </p>
@@ -235,7 +242,7 @@ export default function PsychologistDashboardContent({
               </tr>
             </thead>
             <tbody className="text-[14px] text-[#193C1F]">
-              {completedConsultations.slice(0, 3).map((row) => (
+              {completedData.slice(0, 3).map((row) => (
                 <tr
                   key={row.id}
                   className="border-b border-[#F7F3ED] hover:bg-[#FDFCFB]"
@@ -257,7 +264,7 @@ export default function PsychologistDashboardContent({
               ))}
             </tbody>
           </table>
-          {completedConsultations.length === 0 && (
+          {completedData.length === 0 && (
             <p className="p-10 text-center text-[#8EA087]">
               No completed sessions yet.
             </p>

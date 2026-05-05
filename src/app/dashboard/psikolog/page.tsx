@@ -31,49 +31,80 @@ export default async function PsychologistDashboardPage() {
   }
 
   // 3. Ambil data sesuai format yang temanmu kasih di foto
-  const [consultations, totalConsCount, pendingConsCount, completedConsCount] =
-    await Promise.all([
-      // Ambil daftar konsultasi terbaru untuk psikolog ini
-      prisma.consultation.findMany({
-        where: { psychologistId: session.user.id }, // Filter berdasarkan ID Psikolog
-        orderBy: { id: 'desc' },
-        take: 10,
-        select: {
-          id: true,
-          title: true,
-          category: true,
-          date: true,
-          status: true,
-          user: {
-            // Ambil data pasien (user)
-            select: {
-              name: true,
-            },
+  const [
+    upcomingConsultations,
+    completedConsultations,
+    totalConsCount,
+    pendingConsCount,
+    completedConsCount,
+  ] = await Promise.all([
+    // Ambil daftar konsultasi upcoming (SCHEDULED, ONGOING)
+    prisma.consultation.findMany({
+      where: {
+        psychologistId: session.user.id,
+        status: { in: ['SCHEDULED', 'ONGOING'] },
+      },
+      orderBy: { id: 'desc' },
+      take: 3,
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        date: true,
+        status: true,
+        isAnonymous: true,
+        user: {
+          select: {
+            name: true,
           },
         },
-      }),
+      },
+    }),
 
-      // Hitung total konsultasi
-      prisma.consultation.count({
-        where: { psychologistId: session.user.id },
-      }),
-
-      // Hitung konsultasi yang PENDING / SCHEDULED (sesuai foto temanmu)
-      prisma.consultation.count({
-        where: {
-          psychologistId: session.user.id,
-          status: 'SCHEDULED',
+    // Ambil daftar konsultasi completed (COMPLETED, CANCELLED)
+    prisma.consultation.findMany({
+      where: {
+        psychologistId: session.user.id,
+        status: { in: ['COMPLETED', 'CANCELLED'] },
+      },
+      orderBy: { id: 'desc' },
+      take: 10,
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        date: true,
+        status: true,
+        isAnonymous: true,
+        user: {
+          select: {
+            name: true,
+          },
         },
-      }),
+      },
+    }),
 
-      // Hitung konsultasi yang COMPLETED (sesuai foto temanmu)
-      prisma.consultation.count({
-        where: {
-          psychologistId: session.user.id,
-          status: 'COMPLETED',
-        },
-      }),
-    ]);
+    // Hitung total konsultasi
+    prisma.consultation.count({
+      where: { psychologistId: session.user.id },
+    }),
+
+    // Hitung konsultasi yang PENDING / SCHEDULED / ONGOING
+    prisma.consultation.count({
+      where: {
+        psychologistId: session.user.id,
+        status: { in: ['SCHEDULED', 'ONGOING'] },
+      },
+    }),
+
+    // Hitung konsultasi yang COMPLETED / CANCELLED
+    prisma.consultation.count({
+      where: {
+        psychologistId: session.user.id,
+        status: { in: ['COMPLETED', 'CANCELLED'] },
+      },
+    }),
+  ]);
 
   const displayName = currentUser?.name || session.user.name || 'Psychologist';
 
@@ -84,7 +115,8 @@ export default async function PsychologistDashboardPage() {
       }
     >
       <PsychologistDashboardContent
-        consultations={consultations}
+        upcomingConsultations={upcomingConsultations}
+        completedConsultations={completedConsultations}
         displayName={displayName}
         totalConsultationsCount={totalConsCount}
         pendingConsultationsCount={pendingConsCount}
