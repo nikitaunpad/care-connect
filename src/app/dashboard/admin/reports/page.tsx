@@ -61,10 +61,19 @@ export default async function AdminReportsPage({ searchParams }: PageProps) {
       (sum, d) => sum + Number(d.amount),
       0,
     );
+
     return {
-      ...r,
+      id: r.id,
+      title: r.title,
+      category: r.category,
+      status: r.status,
+      isAnonymous: r.isAnonymous,
+      province: r.province,
+      city: r.city,
       incidentDate: r.incidentDate.toISOString(),
       createdAt: r.createdAt.toISOString(),
+      description: r.description,
+      user: r.user,
       hasEvidence: r.evidences.length > 0,
       donationTotal,
     };
